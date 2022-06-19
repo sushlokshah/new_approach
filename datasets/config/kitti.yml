@@ -1,0 +1,5 @@
+dataset: kitti
+seq: training
+dataset_path: datasets/kitti/
+height: 375
+width: 1242

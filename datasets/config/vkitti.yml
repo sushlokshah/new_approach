@@ -1,0 +1,5 @@
+dataset: vkitti
+seq: 0001/fog
+dataset_path: datasets/vkitti/
+height: 375
+width: 1242
