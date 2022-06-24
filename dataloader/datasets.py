@@ -226,8 +226,6 @@ class VirtualKITTI(FlowDataset):
             for s in seq:
                 for t in setup_type:
                     self.flow_list += sorted(glob(osp.join(root, 'vkitti_1.3.1_flogt', '%s' %(s) ,'%s/*.png' % (t))))
-            
-
 
 def fetch_dataloader(args, TRAIN_DS='C+T+K/S'):
     """ Create the data loader for the corresponding trainign set """
