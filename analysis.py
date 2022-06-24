@@ -1,5 +1,5 @@
 import sys, os, argparse, yaml
-from config.config import data_analysis_parameters
+from datasets.config.config import data_analysis_parameters
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
