@@ -2,3 +2,4 @@ datasets/kitti
 datasets/vkitti
 datasets/carla
 pretrained_models/
+result/

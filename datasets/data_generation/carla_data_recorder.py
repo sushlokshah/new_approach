@@ -154,6 +154,7 @@ def main(weather_param,weather,num_camera,i,num_imgs):
 if __name__ == "__main__":
 
     weather_list = [
+        carla.WeatherParameters.SoftRainNight,
         carla.WeatherParameters.ClearNoon,
         carla.WeatherParameters.CloudyNoon,
         carla.WeatherParameters.HardRainNight,
@@ -172,11 +173,12 @@ if __name__ == "__main__":
         carla.WeatherParameters.ClearNight,
         carla.WeatherParameters.CloudyNight,
         carla.WeatherParameters.WetNight,
-        carla.WeatherParameters.WetCloudyNight,
-        carla.WeatherParameters.SoftRainNight
+        carla.WeatherParameters.WetCloudyNight
+        
     ]
     
     weather_name_list = [
+        'SoftRainNight',
         'ClearNoon',
         'CloudyNoon',
         'HardRainNight',
@@ -195,8 +197,7 @@ if __name__ == "__main__":
         'ClearNight',
         'CloudyNight',
         'WetNight',
-        'WetCloudyNight',
-        'SoftRainNight'
+        'WetCloudyNight'
     ]
 
     num_camera = 24
@@ -206,6 +207,7 @@ if __name__ == "__main__":
     for j in range(len(weather_list)):
         weather_param = weather_list[j]
         weather = "datasets/carla/" + weather_name_list[j]
+        print(weather)
         # i = -(num_camera//2 - 1)
         for i in range(-(num_camera//2 - 1), num_camera//2 + 1):
             try:
