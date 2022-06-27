@@ -243,7 +243,7 @@ def validate_vkitti(model, iters=24,setup = ["fog"],output_dir = "result/vkitti/
 def validate_carla(model, iters=24,setup = ["fog"],output_dir = "result/vkitti/"):
     """ Peform validation using the KITTI-2015 (train) split """
     model.eval()
-    val_dataset = datasets.Carla_Dataset(split='training', seq= ["ClearNoon"], setup_type = setup, is_validate=True)
+    val_dataset = datasets.Carla_Dataset(split='training', seq= ["SoftRainNight"], setup_type = setup, is_validate=True)
     #print("completed dataloading")
     out_list, epe_list = [], []
     flow_estimation_time =[]
@@ -252,7 +252,7 @@ def validate_carla(model, iters=24,setup = ["fog"],output_dir = "result/vkitti/"
         image1, image2, flow_gt, valid_gt, extra_info = val_dataset[val_id]
         image1 = image1[None].cuda()
         image2 = image2[None].cuda()
-        #print(extra_info)
+        print(extra_info)
         padder = InputPadder(image1.shape, mode='kitti')
         image1, image2 = padder.pad(image1, image2)
         start = time.time()
@@ -261,7 +261,8 @@ def validate_carla(model, iters=24,setup = ["fog"],output_dir = "result/vkitti/"
         flow_estimation_time.append(end - start)
         flow = padder.unpad(flow_pr[0]).cpu()
         flow = flow.numpy().transpose(1,2,0)
-        np.savez(output_dir + extra_info[0].split(".")[0] + ".npz",flow = flow)
+        # print(extra_info)
+        np.savez(output_dir + extra_info[0].split(".")[0] + "." + extra_info[0].split(".")[1] + ".npz",flow = flow)
         flow_kitti_format = np.zeros([flow.shape[0],flow.shape[1],3])
         flow_kitti_format[:,:,2] = (flow[:,:,0]/(flow.shape[1] - 1) + 1)*((2**16 - 1.0)/2)
         flow_kitti_format[:,:,1] = (flow[:,:,1]/(flow.shape[0] - 1) + 1)*((2**16 - 1.0)/2)
@@ -319,8 +320,8 @@ if __name__ == '__main__':
     #print(seq)
     for i in seq:
         #print(i)
-        if not os.path.exists("result/vkitti_" + i + "/"):
-            os.makedirs(("result/vkitti_" + i + "/"))
+        if not os.path.exists("result/SoftRainNight/flow_" + i + "/"):
+            os.makedirs(("result/SoftRainNight/flow_" + i + "/"))
         list_seq = []
         list_seq.append(i)
         # create_sintel_submission(model.module, warm_start=True)
@@ -340,10 +341,10 @@ if __name__ == '__main__':
                 validate_kitti(model.module)
                 
             elif args.dataset == 'vkitti':
-                validate_vkitti(model.module,setup= list_seq, output_dir = "result/vkitti_" + i + "/")
+                validate_vkitti(model.module,setup= list_seq, output_dir = "result/SoftRainNight/flow_" + i + "/")
             
             elif args.dataset == 'carla':
-                validate_carla(model.module,setup= list_seq, output_dir = "result/vkitti_" + i + "/")
+                validate_carla(model.module,setup= list_seq, output_dir = "result/SoftRainNight/flow_" + i + "/")
 
             elif args.dataset == 'kitti_test':
                 create_kitti_submission(model.module)

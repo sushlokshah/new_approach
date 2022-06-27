@@ -253,7 +253,7 @@ class Carla_Dataset(FlowDataset):
             img1 = image_dirs[i]
             img2 = image_dirs[i+1]  
             self.image_list += [ [img2, img1] ]
-            self.extra_info += [ [img1.split('/')[-1]] ]
+            self.extra_info += [ [img2.split('/')[-1]] ]
             
         if split == 'training':
             for s in seq:
