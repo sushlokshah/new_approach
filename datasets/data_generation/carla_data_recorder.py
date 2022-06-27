@@ -50,13 +50,9 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name):
         cv.imwrite(weather + "/" + sensor_name + "/{}_{}.png".format(sensor_data.frame,sensor_data.timestamp),img)
 
         
-def main(weather_param,weather,num_camera,i,num_imgs):
+def main(world, weather_param,weather,num_camera,i,num_imgs,transform):
     # We start creating the client
     actor_list = []
-    client = carla.Client('localhost', 2000)
-    client.set_timeout(2.0)
-    world = client.get_world()
-    
     world.set_weather(weather_param)
     try:
         
@@ -71,7 +67,7 @@ def main(weather_param,weather,num_camera,i,num_imgs):
         blueprint_library = world.get_blueprint_library()
         
         vehicle_bp = blueprint_library.find('vehicle.tesla.cybertruck')
-        transform = random.choice(world.get_map().get_spawn_points())
+        
         vehicle = world.spawn_actor(vehicle_bp, transform)
         actor_list.append(vehicle)
         print('created %s' % vehicle.type_id) 
@@ -155,55 +151,58 @@ if __name__ == "__main__":
 
     weather_list = [
         carla.WeatherParameters.SoftRainNight,
-        carla.WeatherParameters.ClearNoon,
-        carla.WeatherParameters.CloudyNoon,
-        carla.WeatherParameters.HardRainNight,
-        carla.WeatherParameters.WetNoon,
-        carla.WeatherParameters.WetCloudyNoon,
-        carla.WeatherParameters.MidRainyNoon,
-        carla.WeatherParameters.HardRainNoon,
-        carla.WeatherParameters.SoftRainNoon,
-        carla.WeatherParameters.ClearSunset,
-        carla.WeatherParameters.CloudySunset,
-        carla.WeatherParameters.WetSunset,
-        carla.WeatherParameters.WetCloudySunset,
-        carla.WeatherParameters.MidRainSunset,
-        carla.WeatherParameters.HardRainSunset,
-        carla.WeatherParameters.SoftRainSunset,
-        carla.WeatherParameters.ClearNight,
-        carla.WeatherParameters.CloudyNight,
-        carla.WeatherParameters.WetNight,
-        carla.WeatherParameters.WetCloudyNight
+        # carla.WeatherParameters.ClearNoon,
+        # carla.WeatherParameters.CloudyNoon,
+        # carla.WeatherParameters.HardRainNight,
+        # carla.WeatherParameters.WetNoon,
+        # carla.WeatherParameters.WetCloudyNoon,
+        # carla.WeatherParameters.MidRainyNoon,
+        # carla.WeatherParameters.HardRainNoon,
+        # carla.WeatherParameters.SoftRainNoon,
+        # carla.WeatherParameters.ClearSunset,
+        # carla.WeatherParameters.CloudySunset,
+        # carla.WeatherParameters.WetSunset,
+        # carla.WeatherParameters.WetCloudySunset,
+        # carla.WeatherParameters.MidRainSunset,
+        # carla.WeatherParameters.HardRainSunset,
+        # carla.WeatherParameters.SoftRainSunset,
+        # carla.WeatherParameters.ClearNight,
+        # carla.WeatherParameters.CloudyNight,
+        # carla.WeatherParameters.WetNight,
+        # carla.WeatherParameters.WetCloudyNight
         
     ]
     
     weather_name_list = [
         'SoftRainNight',
-        'ClearNoon',
-        'CloudyNoon',
-        'HardRainNight',
-        'WetNoon',
-        'WetCloudyNoon',
-        'MidRainyNoon',
-        'HardRainNoon',
-        'SoftRainNoon',
-        'ClearSunset',
-        'CloudySunset',
-        'WetSunset',
-        "WetCloudySunset",
-        "MidRainSunset",
-        'HardRainSunset',
-        'SoftRainSunset',
-        'ClearNight',
-        'CloudyNight',
-        'WetNight',
-        'WetCloudyNight'
+        # 'ClearNoon',
+        # 'CloudyNoon',
+        # 'HardRainNight',
+        # 'WetNoon',
+        # 'WetCloudyNoon',
+        # 'MidRainyNoon',
+        # 'HardRainNoon',
+        # 'SoftRainNoon',
+        # 'ClearSunset',
+        # 'CloudySunset',
+        # 'WetSunset',
+        # "WetCloudySunset",
+        # "MidRainSunset",
+        # 'HardRainSunset',
+        # 'SoftRainSunset',
+        # 'ClearNight',
+        # 'CloudyNight',
+        # 'WetNight',
+        # 'WetCloudyNight'
     ]
 
     num_camera = 24
         # -7 to 7 
     num_imgs = 100
-    
+    client = carla.Client('localhost', 2000)
+    client.set_timeout(2.0)
+    world = client.get_world()
+    transform = world.get_map().get_spawn_points()[0]
     for j in range(len(weather_list)):
         weather_param = weather_list[j]
         weather = "datasets/carla/" + weather_name_list[j]
@@ -211,7 +210,7 @@ if __name__ == "__main__":
         # i = -(num_camera//2 - 1)
         for i in range(-(num_camera//2 - 1), num_camera//2 + 1):
             try:
-                main(weather_param,weather,num_camera,i,num_imgs)
+                main(world,weather_param,weather,num_camera,i,num_imgs,transform)
             except RuntimeError as e:
                 print(e)
                 continue          
