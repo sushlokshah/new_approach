@@ -54,10 +54,11 @@ class FlowDataset(data.Dataset):
 
         index = index % len(self.image_list)
         valid = None
+        h,w = 600,800
         if self.sparse:
             flow, valid = frame_utils.readFlowKITTI(self.flow_list[index])
         else:
-            flow = frame_utils.read_gen(self.flow_list[index])
+            flow = frame_utils.read_gen(self.flow_list[index],h = h,w = w)
 
         img1 = frame_utils.read_gen(self.image_list[index][0])
         img2 = frame_utils.read_gen(self.image_list[index][1])
@@ -236,7 +237,7 @@ class Carla_Dataset(FlowDataset):
                     "CloudyNoon"
                 ], 
             setup_type = [ 'camera_0', 'camera_-1','camera_1'], is_validate=False):
-        super(Carla_Dataset, self).__init__(aug_params, sparse=True)
+        super(Carla_Dataset, self).__init__(aug_params, sparse=False)
         if split == 'testing':
             self.is_test = True
 
@@ -258,7 +259,7 @@ class Carla_Dataset(FlowDataset):
         if split == 'training':
             for s in seq:
                 for t in setup_type:
-                    self.flow_list += sorted(glob(osp.join(root, '%s' %(s) ,'flow_%s/*.png' % (t))))
+                    self.flow_list += sorted(glob(osp.join(root, '%s' %(s) ,'flow_%s/flow_npz/*.npz' % (t))))
 
 def fetch_dataloader(args, TRAIN_DS='C+T+K/S'):
     """ Create the data loader for the corresponding trainign set """

@@ -120,7 +120,7 @@ def writeFlowKITTI(filename, uv):
     cv2.imwrite(filename, uv[..., ::-1])
     
 
-def read_gen(file_name, pil=False):
+def read_gen(file_name, pil=False,h = 600,w = 800):
     ext = splitext(file_name)[-1]
     if ext == '.png' or ext == '.jpeg' or ext == '.ppm' or ext == '.jpg':
         return Image.open(file_name)
@@ -134,4 +134,12 @@ def read_gen(file_name, pil=False):
             return flow
         else:
             return flow[:, :, :-1]
+    elif ext == '.npz':
+        flow = np.load(file_name)
+        # print(np.array(flow))
+        flow = np.array(flow["flow"]).reshape((h,w,2))
+        flow[:,:,0] = -1*flow[:,:,0]*(w/2)
+        flow[:,:,1] = flow[:,:,1]*(h/2)
+        return flow
+        # mask = np.ones((w,h))
     return []
