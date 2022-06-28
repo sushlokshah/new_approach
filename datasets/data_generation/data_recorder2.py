@@ -150,14 +150,14 @@ def main(world, weather_param,weather,num_camera,i,num_imgs,transform):
 if __name__ == "__main__":
 
     weather_list = [
-        # carla.WeatherParameters.SoftRainNight,
+        carla.WeatherParameters.SoftRainNight,
         # carla.WeatherParameters.ClearNoon,
         # carla.WeatherParameters.CloudyNoon,
         # carla.WeatherParameters.HardRainNight,
         # carla.WeatherParameters.WetNoon,
         # carla.WeatherParameters.WetCloudyNoon,
         # carla.WeatherParameters.MidRainyNoon,
-        carla.WeatherParameters.HardRainNoon,
+        # carla.WeatherParameters.HardRainNoon,
         # carla.WeatherParameters.SoftRainNoon,
         # carla.WeatherParameters.ClearSunset,
         # carla.WeatherParameters.CloudySunset,
@@ -174,13 +174,13 @@ if __name__ == "__main__":
     ]
     
     weather_name_list = [
-        # 'SoftRainNight',
+        'SoftRainNight',
         # 'ClearNoon',
         # 'CloudyNoon',
         # 'HardRainNight',
         # 'WetNoon',
         # 'WetCloudyNoon',
-        'MidRainyNoon',
+        # 'MidRainyNoon',
         # 'HardRainNoon',
         # 'SoftRainNoon',
         # 'ClearSunset',
@@ -198,12 +198,11 @@ if __name__ == "__main__":
 
     num_camera = 24
         # -7 to 7 
-    num_imgs = 1000
+    num_imgs = 100
     client = carla.Client('localhost', 2000)
     client.set_timeout(2.0)
     world = client.get_world()
-    transform = world.get_map().get_spawn_points()[-1]
-    print(transform)
+    transform = world.get_map().get_spawn_points()[0]
     for j in range(len(weather_list)):
         weather_param = weather_list[j]
         weather = "datasets/carla/" + weather_name_list[j]
