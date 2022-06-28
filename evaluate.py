@@ -243,7 +243,7 @@ def validate_vkitti(model, iters=24,setup = ["fog"],output_dir = "result/vkitti/
 def validate_carla(model, iters=24,setup = ["fog"],output_dir = "result/vkitti/"):
     """ Peform validation using the KITTI-2015 (train) split """
     model.eval()
-    val_dataset = datasets.Carla_Dataset(split='training', seq= ["SoftRainNight"], setup_type = setup, is_validate=True)
+    val_dataset = datasets.Carla_Dataset(split='training', seq= ["MidRainyNoon"], setup_type = setup, is_validate=True)
     #print("completed dataloading")
     out_list, epe_list = [], []
     flow_estimation_time =[]
@@ -263,12 +263,12 @@ def validate_carla(model, iters=24,setup = ["fog"],output_dir = "result/vkitti/"
         flow = flow.numpy().transpose(1,2,0)
         # print(extra_info)
         np.savez(output_dir + extra_info[0].split(".")[0] + "." + extra_info[0].split(".")[1] + ".npz",flow = flow)
-        flow_kitti_format = np.zeros([flow.shape[0],flow.shape[1],3])
-        flow_kitti_format[:,:,2] = (flow[:,:,0]/(flow.shape[1] - 1) + 1)*((2**16 - 1.0)/2)
-        flow_kitti_format[:,:,1] = (flow[:,:,1]/(flow.shape[0] - 1) + 1)*((2**16 - 1.0)/2)
-        flow_kitti_format[:,:,0] = np.ones([flow.shape[0],flow.shape[1]]).reshape(flow_kitti_format[:,:,0].shape)*(2**16 - 1.0)
-        flow_kitti_format = flow_kitti_format.astype(np.uint16)
-        cv.imwrite(output_dir + extra_info[0] ,flow_kitti_format)
+        # flow_kitti_format = np.zeros([flow.shape[0],flow.shape[1],3])
+        # flow_kitti_format[:,:,2] = (flow[:,:,0]/(flow.shape[1] - 1) + 1)*((2**16 - 1.0)/2)
+        # flow_kitti_format[:,:,1] = (flow[:,:,1]/(flow.shape[0] - 1) + 1)*((2**16 - 1.0)/2)
+        # flow_kitti_format[:,:,0] = np.ones([flow.shape[0],flow.shape[1]]).reshape(flow_kitti_format[:,:,0].shape)*(2**16 - 1.0)
+        # flow_kitti_format = flow_kitti_format.astype(np.uint16)
+        # cv.imwrite(output_dir + extra_info[0] ,flow_kitti_format)
         # #print(flow2_kitti_format.shape)
         # epe = torch.sum((flow - flow_gt)**2, dim=0).sqrt()
         # mag = torch.sum(flow_gt**2, dim=0).sqrt()
@@ -312,7 +312,7 @@ if __name__ == '__main__':
     model.cuda()
     model.eval()
 
-    temp_seq = sorted(os.listdir("/home/sushlok/new_approach/datasets/carla/ClearNoon"))
+    temp_seq = sorted(os.listdir("/home/sushlok/new_approach/datasets/carla/MidRainyNoon"))
     seq = []
     for i in temp_seq:
         if(i[:3] == "rgb"):
@@ -320,8 +320,8 @@ if __name__ == '__main__':
     #print(seq)
     for i in seq:
         #print(i)
-        if not os.path.exists("result/SoftRainNight/flow_" + i + "/"):
-            os.makedirs(("result/SoftRainNight/flow_" + i + "/"))
+        if not os.path.exists("result/MidRainyNoon/flow_" + i + "/"):
+            os.makedirs(("result/MidRainyNoon/flow_" + i + "/"))
         list_seq = []
         list_seq.append(i)
         # create_sintel_submission(model.module, warm_start=True)
@@ -341,10 +341,10 @@ if __name__ == '__main__':
                 validate_kitti(model.module)
                 
             elif args.dataset == 'vkitti':
-                validate_vkitti(model.module,setup= list_seq, output_dir = "result/SoftRainNight/flow_" + i + "/")
+                validate_vkitti(model.module,setup= list_seq, output_dir = "result/MidRainyNoon/flow_" + i + "/")
             
             elif args.dataset == 'carla':
-                validate_carla(model.module,setup= list_seq, output_dir = "result/SoftRainNight/flow_" + i + "/")
+                validate_carla(model.module,setup= list_seq, output_dir = "result/MidRainyNoon/flow_" + i + "/")
 
             elif args.dataset == 'kitti_test':
                 create_kitti_submission(model.module)

@@ -57,13 +57,13 @@ def extract_flow_map(path,w,h,id,flow_method):
         return flow, mask
     
 
-result_dir = 'result/SoftRainNight/'
+result_dir = 'result/MidRainyNoon/'
 gt_dir = "datasets/carla/"
 
 for seq in sorted(os.listdir(result_dir)):
     #list all npz file in the result directory
     print(seq)
-    # if(seq == "flow_camera_-6"):
+    # if(seq == "flow_camera_2"):
     list_seq = sorted(os.listdir(result_dir+"/" +seq))
     paths = []
     epes = []
@@ -73,9 +73,11 @@ for seq in sorted(os.listdir(result_dir)):
             paths.append(path)
     for i in range(len(paths) - 1):
         pred_flow, pred_mask = extract_flow_map(result_dir+"/" +seq+"/" + paths[i] ,800,600,"flow","pred")
-        gt_flow, gt_mask = extract_flow_map(gt_dir+"SoftRainNight/" + seq +"/flow_npz/" + paths[i] ,800,600,"flow","gt")
+        gt_flow, gt_mask = extract_flow_map(gt_dir+"MidRainyNoon/" + seq +"/flow_npz/" + paths[i] ,800,600,"flow","gt")
         # print(pred_flow.shape, gt_flow.shape)
         error_map, epe, abs_error, error_u, error_v , epe_map = evaluate_flow(pred_flow, gt_flow)
+        # print(result_dir+"/" +seq+"/vis/" + paths[i].split(".")[0] + "." + paths[i].split(".")[1] + ".png")
+        cv.imwrite(result_dir+"/" +seq+"/vis/" + paths[i].split(".")[0] + "." + paths[i].split(".")[1] + ".png", error_map)
         epes.append(epe)
         absolute_errors.append(abs_error) 
         # # find minimum of minima & maximum of maxima
@@ -101,7 +103,7 @@ for seq in sorted(os.listdir(result_dir)):
         # ax[1][3].set_title("error_map_vis, epe = {}".format(epe))
         # figManager = plt.get_current_fig_manager()
         # figManager.window.showMaximized()
-        plt.show()
+        # plt.show()
     data_error = {
     "EPE" : epes,
     "absolute_error": absolute_errors
