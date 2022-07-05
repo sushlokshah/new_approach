@@ -308,7 +308,7 @@ def fetch_dataloader(args, TRAIN_DS='C+T+K/S'):
     
     elif args.stage == 'carla':
         aug_params = {'crop_size': args.image_size, 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
-        train_dataset = VirtualKITTI(aug_params, split='training', seq= ["ClearNoon"], setup_type = ['camera_0', 'camera_-1','camera_1'])
+        train_dataset = Carla_Dataset(aug_params, split='training', seq= ["MidRainyNoon"], setup_type = ['camera_0']) # , 'camera_1','camera_2','camera_3', 'camera_4'
 
     train_loader = data.DataLoader(train_dataset, batch_size=args.batch_size,
         pin_memory=False, shuffle=True, num_workers=4, drop_last=True)

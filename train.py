@@ -23,7 +23,7 @@ from core import create_model
 from core.loss import compute_supervision_coarse, compute_coarse_loss, backwarp
 
 import evaluate
-import dataloader.datasets as datasets
+import datasets.dataloader.datasets as datasets
 
 from tensorboardX import SummaryWriter
 
@@ -48,7 +48,6 @@ except:
 MAX_FLOW = 400
 SUM_FREQ = 100
 VAL_FREQ = 5000
-
 
 def sequence_loss(train_outputs, image1, image2, flow_gt, valid, gamma=0.8, max_flow=MAX_FLOW, use_matching_loss=False):
     """ Loss function defined over sequence of flow predictions """
@@ -124,6 +123,7 @@ class Logger:
 
     def _print_training_status(self):
         metrics_data = [self.running_loss[k]/SUM_FREQ for k in sorted(self.running_loss.keys())]
+        print(metrics_data)
         training_str = "[{:6d}, {:10.7f}] ".format(self.total_steps+1, self.scheduler.get_last_lr()[0])
         metrics_str = ("{:10.4f}, "*len(metrics_data)).format(*metrics_data)
 
@@ -162,7 +162,7 @@ class Logger:
 
 
 def train(args):
-
+    print(args.gpus)
     model = nn.DataParallel(create_model(args), device_ids=args.gpus)
     print("Parameter Count: %d" % count_parameters(model))
 
@@ -175,6 +175,7 @@ def train(args):
     if args.stage != 'chairs':
         model.module.freeze_bn()
 
+    print(args.restore_ckpt)
     if args.restore_ckpt is not None:
         strStep = os.path.split(args.restore_ckpt)[-1].split('_')[0]
         total_steps = int(strStep) if strStep.isdigit() else 0
@@ -283,4 +284,6 @@ if __name__ == '__main__':
 
     os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(map(str, args.gpus))
     args.gpus = [i for i in range(len(args.gpus))]
+    print(args)
+    # sys.exit(0)
     train(args)

@@ -9,7 +9,16 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "args": ["-config", "data_analysis/config/kitti.yml" , "-dataset", "kitti"],
+            "args": ["--model gmflownet", "--name gmflownet-carla",
+                    "--stage carla", "--validation carla",
+                    "--restore_ckpt", "pretrained_models/gmflownet-kitti.pth",
+                    "--gpus" ,"0",
+                    "--num_steps", "50000",
+                    "--batch_size","6",
+                    "--lr", "0.0001",
+                    "--image_size", "600 800",
+                    "--wdecay", "0.00001",
+                    "--gamma=0.85"],
             "console": "integratedTerminal",
             "justMyCode": true
         }

@@ -57,7 +57,6 @@ class ResidualBlock(nn.Module):
         return self.relu(x+y)
 
 
-
 class BottleneckBlock(nn.Module):
     def __init__(self, in_planes, planes, norm_fn='group', stride=1):
         super(BottleneckBlock, self).__init__()
@@ -276,7 +275,7 @@ class BasicConvEncoder(nn.Module):
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
         self.conv2 = nn.Conv2d(64, half_out_dim, kernel_size=3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(half_out_dim, output_dim, kernel_size=3, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(half_out_dim, output_dim, kernel_size=3, stride=2, padding=1) # H/8 W/8
 
         # # output convolution; this can solve mixed memory warning, not know why
         # self.conv2 = nn.Conv2d(128, output_dim, kernel_size=1)

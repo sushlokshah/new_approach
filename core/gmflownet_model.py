@@ -54,7 +54,6 @@ class GMFlowNetModel(nn.Module):
         self.cnet = BasicEncoder(output_dim=hdim+cdim, norm_fn='batch', dropout=args.dropout)
         self.update_block = BasicUpdateBlock(self.args, hidden_dim=hdim, input_dim=cdim)
 
-
     def freeze_bn(self):
         for m in self.modules():
             if isinstance(m, nn.BatchNorm2d):
@@ -81,7 +80,6 @@ class GMFlowNetModel(nn.Module):
         up_flow = torch.sum(mask * up_flow, dim=2)
         up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
         return up_flow.reshape(N, 2, 8*H, 8*W)
-
 
     def forward(self, image1, image2, iters=12, flow_init=None, upsample=True, test_mode=False):
         """ Estimate optical flow between pair of frames """
