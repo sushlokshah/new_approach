@@ -309,6 +309,15 @@ if __name__ == '__main__':
     model = torch.nn.DataParallel(create_model(args))
     model.load_state_dict(torch.load(args.ckpt), strict=True)
 
+    # # save python model for c++ evaluation
+    # # An example input you would normally provide to your model's forward() method.
+    # example = [torch.rand(1, 3, 200, 200),torch.rand(1, 3, 200, 200)]
+
+    # # Use torch.jit.trace to generate a torch.jit.ScriptModule via tracing.
+    # traced_script_module = torch.jit.trace(model, example)
+    # output = traced_script_module(torch.ones(1, 3, 200, 200),torch.rand(1, 3, 200, 200))
+    # print(len(output))
+    # sys.exit(0)
     model.cuda()
     model.eval()
 

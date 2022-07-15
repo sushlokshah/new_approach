@@ -4,3 +4,5 @@ datasets/carla
 pretrained_models/
 result/
 checkpoints/
+src/
+wandb/
