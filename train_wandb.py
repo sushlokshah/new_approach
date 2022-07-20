@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 import sys
+from sklearn.model_selection import train_test_split
 
 from yaml import parse
 sys.path.append('core')
@@ -49,7 +50,7 @@ except:
 
 # exclude extremely large displacements
 MAX_FLOW = 400
-SUM_FREQ = 100
+SUM_FREQ = 10
 VAL_FREQ = 10
 
 def sequence_loss(train_outputs, image1, image2, flow_gt, valid, gamma=0.8, max_flow=MAX_FLOW, use_matching_loss=False):
@@ -105,11 +106,11 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def fetch_optimizer(config, model, last_iters=-1):
+def fetch_optimizer(config, model,len_data, last_iters=-1):
     """ Create the optimizer and learning rate scheduler """
     optimizer = AdamW(model.parameters(), lr=config.lr, weight_decay=config.wdecay, eps=config.epsilon)
 
-    scheduler = OneCycleLR(optimizer, config.lr, config.epochs +100,
+    scheduler = OneCycleLR(optimizer, config.lr, config.epochs*len_data +100,
         pct_start=0.05, cycle_momentum=False, anneal_strategy='linear', last_epoch=last_iters)
 
     return optimizer, scheduler
@@ -126,7 +127,7 @@ class Logger:
 
     def _print_training_status(self):
         metrics_data = [self.running_loss[k]/SUM_FREQ for k in sorted(self.running_loss.keys())]
-        print(metrics_data)
+        # print(metrics_data)
         training_str = "[{:6d}, {:10.7f}] ".format(self.total_steps+1, self.scheduler.get_last_lr()[0])
         metrics_str = ("{:10.4f}, "*len(metrics_data)).format(*metrics_data)
 
@@ -195,14 +196,15 @@ def train(config = None):
             total_steps = 0
 
         train_loader = datasets.fetch_dataloader(args,config= config, TRAIN_DS='C+T+K/S')
-        optimizer, scheduler = fetch_optimizer(config, model, total_steps)
+        optimizer, scheduler = fetch_optimizer(config, model,len(train_loader), total_steps)
 
         scaler = GradScaler(enabled=args.mixed_precision)
         logger = Logger(model, scheduler, total_steps, os.path.join('runs', args.name))
 
-        add_noise = True
+        # add_noise = True
 
-        for epoch in range(config.epochs):
+        should_keep_training = True
+        while should_keep_training:
             # average_loss = 0.0
             # average_metrics = {}
             # average_metrics['epe'] = 0.0
@@ -238,10 +240,10 @@ def train(config = None):
 
                 logger.push(metrics)
                 
-                wandb.log({"loss": loss.item(), "epoch": epoch , 'epe': metrics['epe'], '1px': metrics['1px'], '3px': metrics['3px'], '5px': metrics['5px']})
-            if epoch % VAL_FREQ == 0:
-                PATH = 'checkpoints/%d_%s.pth' % (epoch+1, args.name)
-                torch.save(model.state_dict(), PATH)
+                wandb.log({"loss": loss.item(), "epoch": total_steps//len(train_loader) , 'epe': metrics['epe'], '1px': metrics['1px'], '3px': metrics['3px'], '5px': metrics['5px']})
+                if total_steps % VAL_FREQ == VAL_FREQ - 1:
+                    PATH = 'checkpoints/%d_%s.pth' % (total_steps+1, args.name)
+                    torch.save(model.state_dict(), PATH)    
         #             torch.save(model.state_dict(), PATH)
         #         if total_steps % VAL_FREQ == VAL_FREQ - 1:
         #             PATH = 'checkpoints/%d_%s.pth' % (total_steps+1, args.name)
@@ -262,16 +264,13 @@ def train(config = None):
         #             if args.stage != 'chairs':
         #                 model.module.freeze_bn()
 
-        #         total_steps += 1
+                total_steps += 1
 
-        #         # if total_steps > args.num_steps:
-        #         #     should_keep_training = False
-        #         #     break
+                if total_steps > config.epochs*len(train_loader):
+                    should_keep_training = False
+                    break
 
-        # logger.close()
-
-             
-              
+        logger.close()      
         PATH = 'checkpoints/%s.pth' % args.name
         torch.save(model.state_dict(), PATH)
 
@@ -332,7 +331,7 @@ if __name__ == '__main__':
     parameters_dict = {
         'epochs' : {
             "distribution": "int_uniform",
-            "max" : 4000,
+            "max" : 8,
             'min': 1   
         },
         
@@ -341,7 +340,7 @@ if __name__ == '__main__':
         },
         
         'image_size' : {
-            'values' : [[80,120],[160, 240], [320, 480]]
+            'values' : [[160, 240]] #, [320, 480]]
         },
         
         'iters' : {

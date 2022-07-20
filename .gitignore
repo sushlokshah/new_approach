@@ -6,3 +6,4 @@ result/
 checkpoints/
 src/
 wandb/
+runs/
