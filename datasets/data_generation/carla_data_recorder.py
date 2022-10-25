@@ -150,14 +150,14 @@ def main(world, weather_param,weather,num_camera,i,num_imgs,transform):
 if __name__ == "__main__":
 
     weather_list = [
-        # carla.WeatherParameters.SoftRainNight,
+        carla.WeatherParameters.SoftRainNight,
         # carla.WeatherParameters.ClearNoon,
         # carla.WeatherParameters.CloudyNoon,
         # carla.WeatherParameters.HardRainNight,
         # carla.WeatherParameters.WetNoon,
         # carla.WeatherParameters.WetCloudyNoon,
         # carla.WeatherParameters.MidRainyNoon,
-        carla.WeatherParameters.HardRainNoon,
+        # carla.WeatherParameters.HardRainNoon,
         # carla.WeatherParameters.SoftRainNoon,
         # carla.WeatherParameters.ClearSunset,
         # carla.WeatherParameters.CloudySunset,
@@ -174,13 +174,13 @@ if __name__ == "__main__":
     ]
     
     weather_name_list = [
-        # 'SoftRainNight',
+         'SoftRainNight',
         # 'ClearNoon',
         # 'CloudyNoon',
         # 'HardRainNight',
         # 'WetNoon',
         # 'WetCloudyNoon',
-        'MidRainyNoon',
+        # 'MidRainyNoon',
         # 'HardRainNoon',
         # 'SoftRainNoon',
         # 'ClearSunset',

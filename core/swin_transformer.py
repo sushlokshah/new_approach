@@ -1234,6 +1234,7 @@ class POLAUpdate(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
+        x,cache = x
         """Forward function."""
         # if input is list, combine batch dimension
         is_list = isinstance(x, tuple) or isinstance(x, list)
@@ -1274,7 +1275,7 @@ class POLAUpdate(nn.Module):
         if is_list:
             out = torch.split(out, [batch_dim, batch_dim], dim=0)
 
-        return out
+        return [out,cache]
 
 
 class MixSelfAttnUpdate(nn.Module):
@@ -1467,6 +1468,7 @@ class MixAxialPOLAUpdate(nn.Module):
     def forward(self, x):
         """Forward function."""
         # if input is list, combine batch dimension
+        x,cache = x
         is_list = isinstance(x, tuple) or isinstance(x, list)
         if is_list:
             batch_dim = x[0].shape[0]
@@ -1488,5 +1490,5 @@ class MixAxialPOLAUpdate(nn.Module):
         if is_list:
             out = torch.split(out, [batch_dim, batch_dim], dim=0)
 
-        return out
+        return [out,cache]
 

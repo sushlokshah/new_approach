@@ -273,8 +273,8 @@ class BasicConvEncoder(nn.Module):
             self.norm2 = nn.Sequential()
             self.norm3 = nn.Sequential()
 
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
-        self.conv2 = nn.Conv2d(64, half_out_dim, kernel_size=3, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3) #H/2,W/2
+        self.conv2 = nn.Conv2d(64, half_out_dim, kernel_size=3, stride=2, padding=1) #H/4,W/4
         self.conv3 = nn.Conv2d(half_out_dim, output_dim, kernel_size=3, stride=2, padding=1) # H/8 W/8
 
         # # output convolution; this can solve mixed memory warning, not know why
@@ -285,17 +285,18 @@ class BasicConvEncoder(nn.Module):
             self.dropout = nn.Dropout2d(p=dropout)
         
     def forward(self, x):
-
         # if input is list, combine batch dimension
         is_list = isinstance(x, tuple) or isinstance(x, list)
         if is_list:
             batch_dim = x[0].shape[0]
             x = torch.cat(x, dim=0)
-
+        
+        # print(x.shape)
         x = F.relu(self.norm1(self.conv1(x)), inplace=True)
         x = F.relu(self.norm2(self.conv2(x)), inplace=True)
         x = F.relu(self.norm3(self.conv3(x)), inplace=True)
 
+        
         if self.training and self.dropout is not None:
             x = self.dropout(x)
 
@@ -303,7 +304,200 @@ class BasicConvEncoder(nn.Module):
             x = torch.split(x, [batch_dim, batch_dim], dim=0)
 
         return x
+    
+class Diff_ResidualBlock(nn.Module):
+    def __init__(self, in_planes, planes, norm_fn='group', stride=1):
+        super(Diff_ResidualBlock, self).__init__()
+  
+        self.conv0 = nn.Conv2d(in_planes, planes, kernel_size=3, padding=1, stride=stride)
+        self.conv1 = nn.Conv2d(planes, planes, kernel_size=3, padding=1, stride=stride)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, padding=1)
+        self.relu = nn.ReLU(inplace=True)
 
+        num_groups = planes // 8
+
+        if norm_fn == 'group':
+            self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+            self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+            if not stride == 1:
+                self.norm3 = nn.GroupNorm(num_groups=num_groups, num_channels=planes)
+        
+        elif norm_fn == 'batch':
+            self.norm1 = nn.BatchNorm2d(planes)
+            self.norm2 = nn.BatchNorm2d(planes)
+            if not stride == 1:
+                self.norm3 = nn.BatchNorm2d(planes)
+        
+        elif norm_fn == 'instance':
+            self.norm1 = nn.InstanceNorm2d(planes)
+            self.norm2 = nn.InstanceNorm2d(planes)
+            if not stride == 1:
+                self.norm3 = nn.InstanceNorm2d(planes)
+
+        elif norm_fn == 'none':
+            self.norm1 = nn.Sequential()
+            self.norm2 = nn.Sequential()
+            if not stride == 1:
+                self.norm3 = nn.Sequential()
+
+        # if stride == 1:
+        #     self.downsample = None
+        
+        # else:    
+        #     self.downsample = nn.Sequential(
+        #         nn.Conv2d(in_planes, planes, kernel_size=1, stride=stride), self.norm3)
+
+
+    def forward(self, x):
+        y1 = self.relu(self.norm1(self.conv0(x)))
+        y = self.relu(self.norm1(self.conv1(y1)))
+        y = self.relu(self.norm2(self.conv2(y)))
+
+        # if self.downsample is not None:
+        #     x = self.downsample(x)
+
+        return self.relu(y + y1)
+
+
+class Gradient_based_Downsampling(nn.Module):
+    def __init__(self,kernel_size, stride = 2):
+      super(Gradient_based_Downsampling, self).__init__()
+      self.softmax = nn.Softmax(dim = 2)
+      self.pool = nn.MaxPool2d(kernel_size, stride=stride)
+    
+    def forward(self,output,grad):
+      
+      N, c, h, w = output.shape
+      # image = torch.randn(3, channels, h, w)
+      # print(image)
+      kh, kw = 2, 2 # kernel size
+      dh, dw = 2, 2 # stride
+
+      grad_patches = grad.unfold(2, kh, dh).unfold(3, kw, dw)
+      grad_patches = grad_patches.contiguous().view(N,-1, kh, kw)
+      # print(patches)
+      grad_patches = grad_patches.view(N,-1,kh*kw)
+      # print(patches)
+      grad_patches = self.softmax(grad_patches)
+      grad_patches = grad_patches.view(N,-1,kh,kw)
+      # print(patches)
+      tmp = grad_patches.view(N, -1, kh*kw).permute(0, 2, 1)
+      grad_mask = torch.nn.functional.fold(tmp, (h, w), (kh, kw), 1, 0, (dh, dw))
+      # print(grad_mask.shape)
+      final_output = grad_mask*output
+      # print(final_output.shape)
+      final_output = self.pool(final_output)
+      return final_output
+
+
+class Non_uniform_Encoder(nn.Module):
+    """docstring for BasicConvEncoder"""
+    def __init__(self, output_dim=256, norm_fn='batch', dropout=0.0):
+        super(Non_uniform_Encoder, self).__init__()
+        self.norm_fn = norm_fn
+
+        half_out_dim = max(output_dim // 2, 64)
+        
+        if self.norm_fn == 'group':
+            self.norm1 = nn.GroupNorm(num_groups=8, num_channels=64)
+            self.norm2 = nn.GroupNorm(num_groups=8, num_channels=64)
+            self.norm3 = nn.GroupNorm(num_groups=8, num_channels=64)
+            
+        elif self.norm_fn == 'batch':
+            self.norm1 = nn.BatchNorm2d(64)
+            self.norm2 = nn.BatchNorm2d(128)
+            self.norm3 = nn.BatchNorm2d(output_dim)
+
+        elif self.norm_fn == 'instance':
+            self.norm1 = nn.InstanceNorm2d(64)
+            self.norm2 = nn.InstanceNorm2d(half_out_dim)
+            self.norm3 = nn.InstanceNorm2d(output_dim)
+
+        elif self.norm_fn == 'none':
+            self.norm1 = nn.Sequential()
+            self.norm2 = nn.Sequential()
+            self.norm3 = nn.Sequential()
+
+        half_out_dim = max(output_dim // 2, 64)
+
+        self.conv0 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1)
+
+        self.residual_layer1 =  Diff_ResidualBlock(64,64,norm_fn=norm_fn,stride= 1)
+
+        self.residual_layer2 = Diff_ResidualBlock(64,128,norm_fn=norm_fn,stride= 1)
+
+        self.residual_layer3 = Diff_ResidualBlock(128, output_dim ,norm_fn=norm_fn,stride= 1)
+
+        self.grad_mask1 = nn.Conv2d(3, 1, kernel_size=3, stride=1, padding=1)
+        
+        self.grad_mask2 = nn.Conv2d(64, 1, kernel_size=3, stride=1, padding=1)
+        
+        self.grad_mask3 = nn.Conv2d(128, 1, kernel_size=3, stride=1, padding=1) #H/2,W/2
+        # self.conv2 = nn.Conv2d(64, half_out_dim, kernel_size=3, stride=2, padding=1) #H/4,W/4
+        # self.conv3 = nn.Conv2d(half_out_dim, output_dim, kernel_size=3, stride=2, padding=1) # H/8 W/8
+
+        # # output convolution; this can solve mixed memory warning, not know why
+        # self.conv2 = nn.Conv2d(128, output_dim, kernel_size=1)
+        self.downscale1 = Gradient_based_Downsampling(2,stride = 2)
+        self.downscale2 = Gradient_based_Downsampling(2,stride = 2)
+        self.downscale3 = Gradient_based_Downsampling(2,stride = 2)
+
+        self.dropout = None
+        if dropout > 0:
+            self.dropout = nn.Dropout2d(p=dropout)
+        
+    def forward(self, x):
+        # if input is list, combine batch dimension
+        is_list = isinstance(x, tuple) or isinstance(x, list)
+        if is_list:
+            batch_dim = x[0].shape[0]
+            x = torch.cat(x, dim=0)
+        
+        # print(x.shape)
+        # x = F.relu(self.norm1(self.conv1(x)), inplace=True)
+        # x = F.relu(self.norm2(self.conv2(x)), inplace=True)
+        # x = F.relu(self.norm3(self.conv3(x)), inplace=True)
+
+        
+        # if self.training and self.dropout is not None:
+        #     x = self.dropout(x)
+        input_layer0 = F.relu(self.conv0(x)) #h,w,64
+        print("input_layer0:",input_layer0.shape)
+        grad0 = F.relu(self.grad_mask1(x))
+        print("grad0:",grad0.shape)
+        output_layer0 = self.residual_layer1(input_layer0)
+        print("output_layer0:",output_layer0.shape)
+
+        input_layer1 = self.downscale1(output_layer0,grad0) #h/2.w/2,64
+        print("input_layer1:",input_layer1.shape)
+        grad1 = F.relu(self.grad_mask2(input_layer1))
+        print("grad1:",grad1.shape)
+        output_layer1 = self.residual_layer2(input_layer1)
+        print("output_layer1:",output_layer1.shape)
+
+
+        input_layer2 = self.downscale2(output_layer1,grad1) #h/4,w/4,128
+        print("input_layer2:",input_layer2.shape)
+        grad2 = F.relu(self.grad_mask3(input_layer2))
+        print("grad2:",grad2.shape)
+        output_layer2 = self.residual_layer3(input_layer2)
+        print("output_layer2:",output_layer2.shape)
+
+        input_layer3 = self.downscale3(output_layer2,grad2) #h/8,w/8,256
+        print("output of non-uniform encoding:",input_layer3.shape)
+        # print("input_layer3:",input_layer3)
+        print("--------------------------------------------------------")
+        # output_layer3 = self.residual_layer3(input_layer3)
+        # print("input_layer3:",input_layer3.shape)
+
+
+        cache = [input_layer0,grad0,output_layer0,input_layer1,grad1,output_layer1,input_layer2,grad2,output_layer2]
+
+        if is_list:
+            input_layer3 = torch.split(input_layer3, [batch_dim, batch_dim], dim=0)
+
+        return [input_layer3, cache]
+    
 
 class SmallEncoder(nn.Module):
     def __init__(self, output_dim=128, norm_fn='batch', dropout=0.0):
@@ -380,8 +574,6 @@ class SmallEncoder(nn.Module):
         return x
 
 
-
-
 class MultiHeadAttention(nn.Module):
     ''' Multi-Head Attention module '''
 
@@ -438,7 +630,6 @@ class MultiHeadAttention(nn.Module):
         return q_updated, attn
 
 
-
 class AnchorEncoderBlock(nn.Module):
   
   def __init__(self, anchor_dist, d_model, num_heads, d_ff, dropout=0.):
@@ -485,8 +676,6 @@ class AnchorEncoderBlock(nn.Module):
     outputs = x_new.transpose(-1,-2).reshape(N, C, H, W)
     return outputs
 
-
-
 class EncoderBlock(nn.Module):
   
   def __init__(self, d_model, num_heads, d_ff, dropout=0.):
@@ -521,8 +710,6 @@ class EncoderBlock(nn.Module):
 
     outputs = x_new.transpose(-1,-2).reshape(N, C, H, W)
     return outputs
-
-
 
 class ReduceEncoderBlock(nn.Module):
   
@@ -574,8 +761,6 @@ class ReduceEncoderBlock(nn.Module):
     outputs = x_new.transpose(-1,-2).reshape(N, C, H, W)
     return outputs
 
-
-
 def window_partition(x, window_size):
   """
   Args:
@@ -606,7 +791,6 @@ def window_reverse(windows, window_size, H, W):
   x = windows.view(B, H // window_size, W // window_size, window_size, window_size, -1)
   x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
   return x
-
 
 class LayerEncoderBlock(nn.Module):
   
@@ -772,8 +956,6 @@ class LayerEncoderBlock(nn.Module):
 
         outputs = x_new.permute(0, 3, 1, 2)
         return outputs
-
-
 
 class BasicLayerEncoderBlock(nn.Module):
   

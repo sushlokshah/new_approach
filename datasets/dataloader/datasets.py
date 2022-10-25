@@ -311,7 +311,7 @@ def fetch_dataloader(args, config = None, TRAIN_DS='C+T+K/S'):
             train_dataset = Carla_Dataset(aug_params, split='training', seq= args.seq_list, setup_type = args.setup_list) # , 'camera_1','camera_2','camera_3', 'camera_4'
         else:
             aug_params = {'crop_size': args.image_size, 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
-            train_dataset = Carla_Dataset(aug_params, split='training', seq= args.seq_list, setup_type = args.setup_list) # , 'camera_1','camera_2','camera_3', 'camera_4'
+            train_dataset = Carla_Dataset(aug_params, split='training', seq= ["MidRainSunset"], setup_type = ['camera_1']) # , 'camera_1','camera_2','camera_3', 'camera_4'
 
     if config is not None:
         train_loader = data.DataLoader(train_dataset, batch_size=config.batch_size,

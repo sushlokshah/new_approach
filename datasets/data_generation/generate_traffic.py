@@ -121,7 +121,8 @@ def main():
         '-s', '--seed',
         metavar='S',
         type=int,
-        help='Set random device seed and deterministic mode for Traffic Manager')
+        help='Set random device seed and deterministic mode for Traffic Manager',
+        default= 42)
     argparser.add_argument(
         '--car-lights-on',
         action='store_true',

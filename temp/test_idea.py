@@ -20,7 +20,7 @@ def downscale(img,laplacian, window_size):
     return img2
 
 #scale1
-img = cv.imread('00000.png', cv.IMREAD_GRAYSCALE)
+img = cv.imread('temp/00000.png', cv.IMREAD_GRAYSCALE)
 laplacian = cv.Laplacian(img,cv.CV_64F)
 
 #scale2
