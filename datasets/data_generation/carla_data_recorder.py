@@ -150,8 +150,8 @@ def main(world, weather_param,weather,num_camera,i,num_imgs,transform):
 if __name__ == "__main__":
 
     weather_list = [
-        carla.WeatherParameters.SoftRainNight,
-        # carla.WeatherParameters.ClearNoon,
+        # carla.WeatherParameters.SoftRainNight,
+        carla.WeatherParameters.ClearNoon,
         # carla.WeatherParameters.CloudyNoon,
         # carla.WeatherParameters.HardRainNight,
         # carla.WeatherParameters.WetNoon,
@@ -174,8 +174,8 @@ if __name__ == "__main__":
     ]
     
     weather_name_list = [
-         'SoftRainNight',
-        # 'ClearNoon',
+        #  'SoftRainNight',
+         'ClearNoon',
         # 'CloudyNoon',
         # 'HardRainNight',
         # 'WetNoon',
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
     num_camera = 24
         # -7 to 7 
-    num_imgs = 10
+    num_imgs = 500
     client = carla.Client('localhost', 2000)
     client.set_timeout(2.0)
     world = client.get_world()

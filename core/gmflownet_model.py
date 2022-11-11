@@ -42,14 +42,14 @@ class GMFlowNetModel(nn.Module):
         # feature network, context network, and update block
         if self.args.use_mix_attn:
             self.fnet = nn.Sequential(
-                            # BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
-                            Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
+                            BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
+                            # Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
                             MixAxialPOLAUpdate(embed_dim=256, depth=6, num_head=8, window_size=7)
                         )
         else:
             self.fnet = nn.Sequential(
-                Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
-                # BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
+                # Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
+                BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
                 POLAUpdate(embed_dim=256, depth=6, num_head=8, window_size=7, neig_win_num=1)
             )
 
@@ -105,19 +105,19 @@ class GMFlowNetModel(nn.Module):
         # # Self-attention update
         # fmap1 = self.transEncoder(fmap1)
         # fmap2 = self.transEncoder(fmap2)
-        print("feature_volume:")
-        # print(fmap1, fmap2)
-        print(fmap1.shape)
-        print("------------------------------------------------")
+        # print("feature_volume:")
+        # # print(fmap1, fmap2)
+        # print(fmap1.shape)
+        # print("------------------------------------------------")
         if self.args.alternate_corr:
             corr_fn = AlternateCorrBlock(fmap1, fmap2, radius=self.args.corr_radius)
         else:
             corr_fn = CorrBlock(fmap1, fmap2, radius=self.args.corr_radius)
 
-        print("corr_fn:")
-        # print(corr_fn.corrMap)
-        print("------------------------------------------------")
-        print(corr_fn.corrMap.shape)
+        # print("corr_fn:")
+        # # print(corr_fn.corrMap)
+        # print("------------------------------------------------")
+        # print(corr_fn.corrMap.shape)
         # run the context network
         with autocast(enabled=self.args.mixed_precision):
             cnet = self.cnet(image1)
@@ -134,10 +134,10 @@ class GMFlowNetModel(nn.Module):
         #_, coords_index = torch.max(corrMap, dim=-1) # no gradient here
         softCorrMap = F.softmax(corrMap, dim=2) * F.softmax(corrMap, dim=1) # (N, fH*fW, fH*fW)
 
-        print("softCorrMap:")
+        # print("softCorrMap:")
         # print(softCorrMap)
-        print("------------------------------------------------")
-        print(softCorrMap.shape)
+        # print("------------------------------------------------")
+        # print(softCorrMap.shape)
         if flow_init is not None:
             coords1 = coords1 + flow_init
         else:
@@ -162,16 +162,16 @@ class GMFlowNetModel(nn.Module):
 
             coords_xy = torch.stack([coords_x, coords_y], dim=1).float()
             coords1 = coords_xy
-        print('coords1:')
-        # print(coords1)
-        print(coords1.shape)
-        print("------------------------------------------------")
+        # print('coords1:')
+        # # print(coords1)
+        # print(coords1.shape)
+        # print("------------------------------------------------")
         
         # Iterative update
         flow_predictions = []
-        print("iter:",iter)
+        # print("iter:",iter)
         for itr in range(iters):
-            print(itr)
+            # print(itr)
             coords1 = coords1.detach()
             corr = corr_fn(coords1) # index correlation volume
 
@@ -179,24 +179,24 @@ class GMFlowNetModel(nn.Module):
             # print("flow:")
             # print(flow)
             # print(flow.shape)
-            print("------------------------------------------------")
+            # print("------------------------------------------------")
             with autocast(enabled=self.args.mixed_precision):
                 net, up_mask, delta_flow = self.update_block(net, inp, corr, flow)
 
             # F(t+1) = F(t) + \Delta(t)
             
             coords1 = coords1 + delta_flow
-            print("coords1:")
-            # print(coords1)
-            print(coords1.shape)
-            print("------------------------------------------------")
+            # print("coords1:")
+            # # print(coords1)
+            # print(coords1.shape)
+            # print("------------------------------------------------")
             
             # upsample predictions
             if up_mask is None:
                 flow_up = upflow8(coords1 - coords0)
             else:
                 flow_up = self.upsample_flow(coords1 - coords0, up_mask)
-            print(flow_up.shape)
+            # print(flow_up.shape)
             flow_predictions.append(flow_up)
 
         if test_mode:

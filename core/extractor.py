@@ -303,7 +303,7 @@ class BasicConvEncoder(nn.Module):
         if is_list:
             x = torch.split(x, [batch_dim, batch_dim], dim=0)
 
-        return x
+        return [x, x]
     
 class Diff_ResidualBlock(nn.Module):
     def __init__(self, in_planes, planes, norm_fn='group', stride=1):
@@ -462,31 +462,31 @@ class Non_uniform_Encoder(nn.Module):
         # if self.training and self.dropout is not None:
         #     x = self.dropout(x)
         input_layer0 = F.relu(self.conv0(x)) #h,w,64
-        print("input_layer0:",input_layer0.shape)
+        # print("input_layer0:",input_layer0.shape)
         grad0 = F.relu(self.grad_mask1(x))
-        print("grad0:",grad0.shape)
+        # print("grad0:",grad0.shape)
         output_layer0 = self.residual_layer1(input_layer0)
-        print("output_layer0:",output_layer0.shape)
+        # print("output_layer0:",output_layer0.shape)
 
         input_layer1 = self.downscale1(output_layer0,grad0) #h/2.w/2,64
-        print("input_layer1:",input_layer1.shape)
+        # print("input_layer1:",input_layer1.shape)
         grad1 = F.relu(self.grad_mask2(input_layer1))
-        print("grad1:",grad1.shape)
+        # print("grad1:",grad1.shape)
         output_layer1 = self.residual_layer2(input_layer1)
-        print("output_layer1:",output_layer1.shape)
+        # print("output_layer1:",output_layer1.shape)
 
 
         input_layer2 = self.downscale2(output_layer1,grad1) #h/4,w/4,128
-        print("input_layer2:",input_layer2.shape)
+        # print("input_layer2:",input_layer2.shape)
         grad2 = F.relu(self.grad_mask3(input_layer2))
-        print("grad2:",grad2.shape)
+        # print("grad2:",grad2.shape)
         output_layer2 = self.residual_layer3(input_layer2)
-        print("output_layer2:",output_layer2.shape)
+        # print("output_layer2:",output_layer2.shape)
 
         input_layer3 = self.downscale3(output_layer2,grad2) #h/8,w/8,256
-        print("output of non-uniform encoding:",input_layer3.shape)
+        # print("output of non-uniform encoding:",input_layer3.shape)
         # print("input_layer3:",input_layer3)
-        print("--------------------------------------------------------")
+        # print("--------------------------------------------------------")
         # output_layer3 = self.residual_layer3(input_layer3)
         # print("input_layer3:",input_layer3.shape)
 

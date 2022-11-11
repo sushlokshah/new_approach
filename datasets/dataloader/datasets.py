@@ -244,22 +244,24 @@ class Carla_Dataset(FlowDataset):
         image_dirs = []
         # datasets/vkitti/vkitti_1.3.1_rgb
         # print(seq, setup_type)
+        start = 0
         for s in seq:
             for t in setup_type:
                 # print(sorted(glob(osp.join(root, '%s' %(s) ,'rgb_%s/*.png' % (t)))))
                 image_dirs += sorted(glob(osp.join(root, '%s' %(s) ,'rgb_%s/*.png' % (t))))
-        # print(image_dirs)
-        for i in range(len(image_dirs)-1):
-            img1 = image_dirs[i]
-            img2 = image_dirs[i+1]  
-            self.image_list += [ [img2, img1] ]
-            self.extra_info += [ [img2.split('/')[-1]] ]
+                # print(image_dirs)
+                for i in range(start,len(image_dirs)-1):
+                    img1 = image_dirs[i]
+                    img2 = image_dirs[i+1]  
+                    self.image_list += [ [img2, img1] ]
+                    self.extra_info += [ [img2.split('/')[-1]] ]
+                start = len(image_dirs)
             
-        if split == 'training':
-            for s in seq:
-                for t in setup_type:
-                    self.flow_list += sorted(glob(osp.join(root, '%s' %(s) ,'flow_%s/flow_npz/*.npz' % (t))))
-
+        # if split == 'training':
+        #     for s in seq:
+            # for t in setup_type:
+                self.flow_list += sorted(glob(osp.join(root, '%s' %(s) ,'flow_%s/flow_npz/*.npz' % (t))))
+                    
 def fetch_dataloader(args, config = None, TRAIN_DS='C+T+K/S'):
     """ Create the data loader for the corresponding trainign set """
 
@@ -311,14 +313,14 @@ def fetch_dataloader(args, config = None, TRAIN_DS='C+T+K/S'):
             train_dataset = Carla_Dataset(aug_params, split='training', seq= args.seq_list, setup_type = args.setup_list) # , 'camera_1','camera_2','camera_3', 'camera_4'
         else:
             aug_params = {'crop_size': args.image_size, 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
-            train_dataset = Carla_Dataset(aug_params, split='training', seq= ["MidRainSunset"], setup_type = ['camera_1']) # , 'camera_1','camera_2','camera_3', 'camera_4'
+            train_dataset = Carla_Dataset(aug_params, split='training', seq= ["ClearNoon"], setup_type = ["camera_0","camera_-1","camera_1","camera_-10","camera_10","camera_-11","camera_11","camera_12","camera_-2","camera_2","camera_-3","camera_3","camera_-4","camera_4","camera_-5","camera_5","camera_-6","camera_6","camera_-7","camera_7","camera_-8","camera_8","camera_-9","camera_9"]) # , 'camera_1','camera_2','camera_3', 'camera_4'
 
     if config is not None:
         train_loader = data.DataLoader(train_dataset, batch_size=config.batch_size,
             pin_memory=False, shuffle=True, num_workers=4, drop_last=True)
     else:
-        train_loader = data.DataLoader(train_dataset, batch_size=args.batch_size,
-            pin_memory=False, shuffle=True, num_workers=4, drop_last=True)
+        print("me")
+        train_loader = data.DataLoader(train_dataset, batch_size=args.batch_size, pin_memory=False, shuffle=True, num_workers=4, drop_last=True)
 
     print('Training with %d image pairs' % len(train_dataset))
     return train_loader
