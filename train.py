@@ -46,7 +46,7 @@ except:
 
 # exclude extremely large displacements
 MAX_FLOW = 400
-SUM_FREQ = 100
+SUM_FREQ = 10
 VAL_FREQ = 5000
 
 def sequence_loss(train_outputs, image1, image2, flow_gt, valid, gamma=0.8, max_flow=MAX_FLOW, use_matching_loss=False):
@@ -192,7 +192,7 @@ def train(args):
 
     should_keep_training = True
     while should_keep_training:
-
+        print(should_keep_training)
         for i_batch, data_blob in enumerate(train_loader):
             optimizer.zero_grad()
             image1, image2, flow, valid = [x.cuda() for x in data_blob]
@@ -205,6 +205,8 @@ def train(args):
             flow_predictions = model(image1, image2, iters=args.iters)
 
             loss, metrics = sequence_loss(flow_predictions, image1, image2, flow, valid, gamma=args.gamma, use_matching_loss=args.use_mix_attn)
+            # print("loss", loss)
+            # print("metrics", metrics)
             scaler.scale(loss).backward()
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
