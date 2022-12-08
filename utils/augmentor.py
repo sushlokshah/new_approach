@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 class FlowAugmentor:
     def __init__(self, crop_size, min_scale=-0.2, max_scale=0.5, do_flip=True):
-        
+        print("using_flowaugmentor")
         # spatial augmentation params
         self.crop_size = crop_size
         self.min_scale = min_scale
@@ -66,38 +66,38 @@ class FlowAugmentor:
 
     def spatial_transform(self, img1, img2, flow):
         # randomly sample scale
-        ht, wd = img1.shape[:2]
-        min_scale = np.maximum(
-            (self.crop_size[0] + 8) / float(ht), 
-            (self.crop_size[1] + 8) / float(wd))
+        # ht, wd = img1.shape[:2]
+        # min_scale = np.maximum(
+        #     (self.crop_size[0] + 8) / float(ht), 
+        #     (self.crop_size[1] + 8) / float(wd))
 
-        scale = 2 ** np.random.uniform(self.min_scale, self.max_scale)
-        scale_x = scale
-        scale_y = scale
-        if np.random.rand() < self.stretch_prob:
-            scale_x *= 2 ** np.random.uniform(-self.max_stretch, self.max_stretch)
-            scale_y *= 2 ** np.random.uniform(-self.max_stretch, self.max_stretch)
+        # scale = 2 ** np.random.uniform(self.min_scale, self.max_scale)
+        # scale_x = scale
+        # scale_y = scale
+        # if np.random.rand() < self.stretch_prob:
+        #     scale_x *= 2 ** np.random.uniform(-self.max_stretch, self.max_stretch)
+        #     scale_y *= 2 ** np.random.uniform(-self.max_stretch, self.max_stretch)
         
-        scale_x = np.clip(scale_x, min_scale, None)
-        scale_y = np.clip(scale_y, min_scale, None)
+        # scale_x = np.clip(scale_x, min_scale, None)
+        # scale_y = np.clip(scale_y, min_scale, None)
 
-        if np.random.rand() < self.spatial_aug_prob:
-            # rescale the images
-            img1 = cv2.resize(img1, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
-            img2 = cv2.resize(img2, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
-            flow = cv2.resize(flow, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
-            flow = flow * [scale_x, scale_y]
+        # if np.random.rand() < self.spatial_aug_prob:
+        #     # rescale the images
+        #     img1 = cv2.resize(img1, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+        #     img2 = cv2.resize(img2, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+        #     flow = cv2.resize(flow, None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+        #     flow = flow * [scale_x, scale_y]
 
-        if self.do_flip:
-            if np.random.rand() < self.h_flip_prob: # h-flip
-                img1 = img1[:, ::-1]
-                img2 = img2[:, ::-1]
-                flow = flow[:, ::-1] * [-1.0, 1.0]
+        # if self.do_flip:
+        #     if np.random.rand() < self.h_flip_prob: # h-flip
+        #         img1 = img1[:, ::-1]
+        #         img2 = img2[:, ::-1]
+        #         flow = flow[:, ::-1] * [-1.0, 1.0]
 
-            if np.random.rand() < self.v_flip_prob: # v-flip
-                img1 = img1[::-1, :]
-                img2 = img2[::-1, :]
-                flow = flow[::-1, :] * [1.0, -1.0]
+        #     if np.random.rand() < self.v_flip_prob: # v-flip
+        #         img1 = img1[::-1, :]
+        #         img2 = img2[::-1, :]
+        #         flow = flow[::-1, :] * [1.0, -1.0]
 
         y0 = np.random.randint(0, img1.shape[0] - self.crop_size[0])
         x0 = np.random.randint(0, img1.shape[1] - self.crop_size[1])

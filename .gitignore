@@ -7,3 +7,8 @@ checkpoints/
 src/
 wandb/
 runs/
+output/
+input/
+output2/
+input2/
+runs/
