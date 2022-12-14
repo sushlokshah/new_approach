@@ -229,6 +229,8 @@ def train(args):
                         results.update(evaluate.validate_sintel(model.module))
                     elif val_dataset == 'kitti':
                         results.update(evaluate.validate_kitti(model.module))
+                    elif val_dataset == 'carla':
+                        results.update(evaluate.validate_carla(model.module))
 
                 logger.write_dict(results)
 
