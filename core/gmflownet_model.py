@@ -4,11 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from update import BasicUpdateBlock
-from extractor import BasicEncoder, BasicConvEncoder, Non_uniform_Encoder
-from corr import CorrBlock, AlternateCorrBlock
+from core.update import BasicUpdateBlock
+from core.extractor import BasicEncoder, BasicConvEncoder, Non_uniform_Encoder
+from core.corr import CorrBlock, AlternateCorrBlock
 from utils.utils import bilinear_sampler, coords_grid, upflow8
-from swin_transformer import POLAUpdate, MixAxialPOLAUpdate
+from core.swin_transformer import POLAUpdate, MixAxialPOLAUpdate
 
 try:
     autocast = torch.cuda.amp.autocast
@@ -24,7 +24,7 @@ except:
 
 
 class GMFlowNetModel(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, iters=12,dropout=0.1):
         super().__init__()
         self.args = args
 
@@ -33,8 +33,18 @@ class GMFlowNetModel(nn.Module):
         args.corr_levels = 4
         args.corr_radius = 4
 
-        if not hasattr(self.args, 'dropout'):
-            self.args.dropout = 0
+        if self.args.train:
+            self.iters = self.args.training_parameters['iterations']
+            self.dropout = self.args.training_parameters['dropout']
+        elif self.args.test:
+            self.iters = self.args.testing_parameters['iterations']
+            self.dropout = 0
+        elif self.args.evaluate:
+            self.iters = self.args.training_parameters['iterations']
+            self.dropout = self.args.training_parameters['dropout']
+        else:
+            self.iters = iters
+            self.dropout = dropout
 
         if not hasattr(self.args, 'alternate_corr'):
             self.args.alternate_corr = False
@@ -42,19 +52,20 @@ class GMFlowNetModel(nn.Module):
         # feature network, context network, and update block
         if self.args.use_mix_attn:
             self.fnet = nn.Sequential(
-                            BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
-                            # Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
+                            BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=self.dropout),
+                            # Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=dropout),
                             MixAxialPOLAUpdate(embed_dim=256, depth=6, num_head=8, window_size=7)
                         )
         else:
             self.fnet = nn.Sequential(
-                # Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
-                BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=args.dropout),
+                # Non_uniform_Encoder(output_dim=256, norm_fn='instance', dropout=dropout),
+                BasicConvEncoder(output_dim=256, norm_fn='instance', dropout=self.dropout),
                 POLAUpdate(embed_dim=256, depth=6, num_head=8, window_size=7, neig_win_num=1)
             )
 
-        self.cnet = BasicEncoder(output_dim=hdim+cdim, norm_fn='batch', dropout=args.dropout)
+        self.cnet = BasicEncoder(output_dim=hdim+cdim, norm_fn='batch', dropout=self.dropout)
         self.update_block = BasicUpdateBlock(self.args, hidden_dim=hdim, input_dim=cdim)
+        
 
     def freeze_bn(self):
         for m in self.modules():
@@ -83,9 +94,9 @@ class GMFlowNetModel(nn.Module):
         up_flow = up_flow.permute(0, 1, 4, 2, 5, 3)
         return up_flow.reshape(N, 2, 8*H, 8*W)
 
-    def forward(self, image1, image2, iters=12, flow_init=None, upsample=True, test_mode=False):
+    def forward(self, image1, image2, flow_init=None, upsample=True, test_mode=False):
         """ Estimate optical flow between pair of frames """
-
+        iters = self.iters
         image1 = 2 * (image1 / 255.0) - 1.0
         image2 = 2 * (image2 / 255.0) - 1.0
 

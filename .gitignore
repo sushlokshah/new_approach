@@ -1,6 +1,7 @@
 datasets/kitti
 datasets/vkitti
 datasets/carla
+datasets/carla(copy)
 pretrained_models/
 result/
 checkpoints/
@@ -12,3 +13,5 @@ input/
 output2/
 input2/
 runs/
+visualization/
+run/
