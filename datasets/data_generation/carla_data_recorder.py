@@ -196,9 +196,9 @@ if __name__ == "__main__":
         # 'WetCloudyNight'
     ]
 
-    num_camera = 24
+    num_camera = 8
         # -7 to 7 
-    num_imgs = 500
+    num_imgs = 1000
     client = carla.Client('localhost', 2000)
     client.set_timeout(2.0)
     world = client.get_world()
