@@ -76,7 +76,7 @@ def main():
     argparser.add_argument(
         '-w', '--number-of-walkers',
         metavar='W',
-        default=50,
+        default=40,
         type=int,
         help='Number of walkers (default: 10)')
     argparser.add_argument(
@@ -122,7 +122,7 @@ def main():
         metavar='S',
         type=int,
         help='Set random device seed and deterministic mode for Traffic Manager',
-        default= 42)
+        default= 3)
     argparser.add_argument(
         '--car-lights-on',
         action='store_true',
@@ -131,7 +131,7 @@ def main():
     argparser.add_argument(
         '--hero',
         action='store_true',
-        default=False,
+        default=True,
         help='Set one of the vehicles as hero')
     argparser.add_argument(
         '--respawn',
@@ -158,6 +158,12 @@ def main():
 
     try:
         world = client.get_world()
+        
+        # --------------
+        # Start recording
+        # --------------
+        
+        client.start_recorder('/home/sushlok/new_approach/datasets/data_generation/recording02.log')
 
         traffic_manager = client.get_trafficmanager(args.tm_port)
         traffic_manager.set_global_distance_to_leading_vehicle(2.5)
@@ -189,7 +195,7 @@ def main():
 
         blueprints = get_actor_blueprints(world, args.filterv, args.generationv)
         blueprintsWalkers = get_actor_blueprints(world, args.filterw, args.generationw)
-
+        # print(blueprints)
         if args.safe:
             blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
             blueprints = [x for x in blueprints if not x.id.endswith('microlino')]
@@ -226,7 +232,11 @@ def main():
         for n, transform in enumerate(spawn_points):
             if n >= args.number_of_vehicles:
                 break
-            blueprint = random.choice(blueprints)
+            if hero:
+                blueprint_library = world.get_blueprint_library()
+                blueprint = blueprint_library.find('vehicle.tesla.cybertruck')
+            else:
+                blueprint = random.choice(blueprints)
             if blueprint.has_attribute('color'):
                 color = random.choice(blueprint.get_attribute('color').recommended_values)
                 blueprint.set_attribute('color', color)
@@ -352,6 +362,8 @@ def main():
             settings.fixed_delta_seconds = None
             world.apply_settings(settings)
 
+        client.stop_recorder()
+        
         print('\ndestroying %d vehicles' % len(vehicles_list))
         client.apply_batch([carla.command.DestroyActor(x) for x in vehicles_list])
 

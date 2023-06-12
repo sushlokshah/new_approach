@@ -47,12 +47,29 @@ pretrained_models
     ```
         CUDA_VISIBLE_DEVICES=0 bash /opt/carla-simulator/CarlaUE4.sh -RenderOffScreen
     ```
-    2. generate traffic and record data: (current setup 1000 frames per camera configuration and total 8 camera comfiguration)
+    2. generate traffic
+    edit path from file generate_traffic.py on line number 116 i.e 
+    ```
+    client.start_recorder('/home/sushlok/new_approach/datasets/data_generation/recording02.log')
+    ```
+    with your absolute path and run the following commands
+
     ```
         python3 datasets/data_generation/generate_traffic.py
-        python3 datasets/data_generation/carla_data_recorder.py
     ```
-    3. weather conditions can be changed by commenting and uncommenting the following list from carla_data_recorder.py code
+    run this program for 2-3 mins. it will generate a recording file with all the agents in the scene.
+
+    3. append the same path in data_generation.py file on line number 81 i.e
+    ```
+    client.replay_file("/home/sushlok/new_approach/datasets/data_generation/recording02.log",0,1000,0)
+    ```
+    edit the path with your absolute path and run the following command
+    ```
+        python3 datasets/data_generation/data_generation.py
+    ```
+
+    ```
+    4. weather conditions can be changed by commenting and uncommenting the following list from data_generation.py code
     ```
     weather_list = [
         # carla.WeatherParameters.SoftRainNight,
