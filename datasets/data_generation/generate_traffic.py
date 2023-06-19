@@ -29,6 +29,7 @@ import argparse
 import logging
 from numpy import random
 
+
 def get_actor_blueprints(world, filter, generation):
     bps = world.get_blueprint_library().filter(filter)
 
@@ -52,6 +53,7 @@ def get_actor_blueprints(world, filter, generation):
     except:
         print("   Warning! Actor Generation is not valid. No actor will be spawned.")
         return []
+
 
 def main():
     argparser = argparse.ArgumentParser(
@@ -122,7 +124,7 @@ def main():
         metavar='S',
         type=int,
         help='Set random device seed and deterministic mode for Traffic Manager',
-        default= 3)
+        default=3)
     argparser.add_argument(
         '--car-lights-on',
         action='store_true',
@@ -158,11 +160,11 @@ def main():
 
     try:
         world = client.get_world()
-        
+
         # --------------
         # Start recording
         # --------------
-        
+
         client.start_recorder('/home/sushlok/new_approach/datasets/data_generation/recording02.log')
 
         traffic_manager = client.get_trafficmanager(args.tm_port)
@@ -256,8 +258,8 @@ def main():
 
             # spawn the cars and set their autopilot and light state all together
             batch.append(SpawnActor(blueprint, transform)
-                .then(SetAutopilot(FutureActor, True, traffic_manager.get_port()))
-                .then(SetVehicleLightState(FutureActor, light_state)))
+                         .then(SetAutopilot(FutureActor, True, traffic_manager.get_port()))
+                         .then(SetVehicleLightState(FutureActor, light_state)))
 
         for response in client.apply_batch_sync(batch, synchronous_master):
             if response.error:
@@ -363,7 +365,7 @@ def main():
             world.apply_settings(settings)
 
         client.stop_recorder()
-        
+
         print('\ndestroying %d vehicles' % len(vehicles_list))
         client.apply_batch([carla.command.DestroyActor(x) for x in vehicles_list])
 
@@ -375,6 +377,7 @@ def main():
         client.apply_batch([carla.command.DestroyActor(x) for x in all_id])
 
         time.sleep(0.5)
+
 
 if __name__ == '__main__':
 
