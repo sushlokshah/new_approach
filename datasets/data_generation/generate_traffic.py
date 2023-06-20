@@ -145,8 +145,16 @@ def main():
         action='store_true',
         default=False,
         help='Activate no rendering mode')
+    argparser.add_argument(
+        '--log_path',
+        default=None,
+        help='Path to save the log file')
 
     args = argparser.parse_args()
+
+    if args.log_path is None:
+        print("Please provide a path to save the log file")
+        exit(1)
 
     logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 
@@ -165,7 +173,7 @@ def main():
         # Start recording
         # --------------
 
-        client.start_recorder('/home/sushlok/new_approach/datasets/data_generation/recording02.log')
+        client.start_recorder(args.log_path)
 
         traffic_manager = client.get_trafficmanager(args.tm_port)
         traffic_manager.set_global_distance_to_leading_vehicle(2.5)
