@@ -62,6 +62,7 @@ def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
     # client = carla.Client('127.0.0.1', 2000)
     # client.set_timeout(10.0)
 
+    global print_info_once
     if print_info_once:
         print("trying to use log file for image generation: ", log_path)
         client.show_recorder_file_info(log_path)
