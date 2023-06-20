@@ -23,6 +23,8 @@ import argparse
 import logging
 import random
 
+print_info_once = True
+
 
 def sensor_callback(sensor_data, sensor_queue, sensor_name, log_path):
     sensor_queue.put((sensor_data.frame, sensor_name))
@@ -37,6 +39,7 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name, log_path):
         log_path_dir = os.path.dirname(log_path)
         img_fullpath = os.path.join(log_path_dir, img_filename)
 
+        print("saving image at: ", img_fullpath)
         cv.imwrite(img_fullpath, img)
 
     elif (sensor_name[:11] == "flow_camera"):
@@ -60,7 +63,11 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name, log_path):
 def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
     # client = carla.Client('127.0.0.1', 2000)
     # client.set_timeout(10.0)
-    print("trying to log to: ", log_path)
+
+    if print_info_once:
+        print("trying to use log file for image generation: ", log_path)
+        client.show_recorder_file_info(log_path)
+        print_info_once = False
     try:
 
         world = client.get_world()
