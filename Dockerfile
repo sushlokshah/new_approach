@@ -14,6 +14,9 @@ COPY download_repo_from_github.sh /home/carla/data_generation/download_repo_from
 RUN chmod +x /home/carla/data_generation/download_repo_from_github.sh
 RUN bash /home/carla/data_generation/download_repo_from_github.sh
 
+# Give the user carla ownership of the data_generation folder in order to be able to write to it and create folders
+RUN chown -R carla:carla /home/carla/data_generation
+
 # Set the user to non-root user when running the container
 USER carla
 
