@@ -53,9 +53,10 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name):
         cv.imwrite(weather + "/" + sensor_name + "/{}_{}.png".format(sensor_data.frame, sensor_data.timestamp), img)
 
 
-def main(world, weather_param, weather, num_camera, i, num_imgs):
+def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
     # client = carla.Client('127.0.0.1', 2000)
     # client.set_timeout(10.0)
+    print("trying to log to: ", log_path)
     try:
 
         world = client.get_world()
@@ -77,7 +78,8 @@ def main(world, weather_param, weather, num_camera, i, num_imgs):
         # Reenact a fragment of the recording
         # --------------
 
-        client.replay_file("/home/sushlok/new_approach/datasets/data_generation/recording02.log", 0, 1000, 0)
+        # client.replay_file("/home/sushlok/new_approach/datasets/data_generation/recording02.log", 0, 1000, 0)
+        client.replay_file(log_path, 0, 1000, 0)
 
         world = client.get_world()
         world.set_weather(weather_param)
@@ -184,6 +186,11 @@ def main(world, weather_param, weather, num_camera, i, num_imgs):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description='CARLA Sensor Data Recorder')
+    parser.add_argument('--log_path', type=str, help='Path to the log file')
+    args = parser.parse_args()
+    log_path = args.log_path
+
     weather_list = [
         # carla.WeatherParameters.SoftRainNight,
         carla.WeatherParameters.ClearNoon,
@@ -246,7 +253,7 @@ if __name__ == "__main__":
         # i = -(num_camera//2 - 1)
         for i in range(-(num_camera//2 - 1), num_camera//2 + 1):
             try:
-                main(world, weather_param, weather, num_camera, i, num_imgs)
+                main(world, weather_param, weather, num_camera, i, num_imgs, log_path)
             except RuntimeError as e:
                 print(e)
                 continue
