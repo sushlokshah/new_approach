@@ -23,8 +23,6 @@ import argparse
 import logging
 import random
 
-print_info_once = True
-
 
 def sensor_callback(sensor_data, sensor_queue, sensor_name, log_path):
     sensor_queue.put((sensor_data.frame, sensor_name))
@@ -201,6 +199,9 @@ if __name__ == "__main__":
     parser.add_argument('--log_path', type=str, help='Path to the log file')
     args = parser.parse_args()
     log_path = args.log_path
+
+    global print_info_once
+    print_info_once = True
 
     weather_list = [
         # carla.WeatherParameters.SoftRainNight,
