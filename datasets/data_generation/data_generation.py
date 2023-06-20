@@ -65,7 +65,7 @@ def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
     global print_info_once
     if print_info_once:
         print("trying to use log file for image generation: ", log_path)
-        client.show_recorder_file_info(log_path)
+        client.show_recorder_file_info(log_path, True)
         print_info_once = False
     try:
 
