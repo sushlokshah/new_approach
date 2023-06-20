@@ -24,7 +24,7 @@ import logging
 import random
 
 
-def sensor_callback(sensor_data, sensor_queue, sensor_name):
+def sensor_callback(sensor_data, sensor_queue, sensor_name, log_path):
     sensor_queue.put((sensor_data.frame, sensor_name))
 
     if (sensor_name[:10] == "rgb_camera"):
@@ -33,7 +33,11 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name):
         buffer = buffer.reshape(sensor_data.height, sensor_data.width, 4)
         img = cv.cvtColor(buffer, cv.COLOR_BGRA2BGR)
 
-        cv.imwrite(weather + "/" + sensor_name + "/{}_{}.png".format(sensor_data.frame, sensor_data.timestamp), img)
+        img_filename = weather + "/" + sensor_name + "/{}_{}.png".format(sensor_data.frame, sensor_data.timestamp)
+        log_path_dir = os.path.dirname(log_path)
+        img_fullpath = os.path.join(log_path_dir, img_filename)
+
+        cv.imwrite(img_fullpath, img)
 
     elif (sensor_name[:11] == "flow_camera"):
         flow = np.frombuffer(sensor_data.raw_data, dtype=np.float32)
@@ -50,7 +54,7 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name):
         buffer = np.frombuffer(data, dtype=np.uint8)
         buffer = buffer.reshape(sensor_data.height, sensor_data.width, 4)
         img = cv.cvtColor(buffer, cv.COLOR_BGRA2BGR)
-        cv.imwrite(weather + "/" + sensor_name + "/{}_{}.png".format(sensor_data.frame, sensor_data.timestamp), img)
+        cv.imwrite(img_fullpath, img)
 
 
 def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
@@ -142,10 +146,10 @@ def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
         sensors.append(flow_camera)
         print('created %s' % flow_camera.type_id)
 
-        camera.listen(lambda data: sensor_callback(data, sensor_queue, "rgb_camera_{}".format(i)))
+        camera.listen(lambda data: sensor_callback(data, sensor_queue, "rgb_camera_{}".format(i), log_path))
         sensor_list.append(camera)
 
-        flow_camera.listen(lambda data: sensor_callback(data, sensor_queue, "flow_camera_{}".format(i)))
+        flow_camera.listen(lambda data: sensor_callback(data, sensor_queue, "flow_camera_{}".format(i), log_path))
         sensor_list.append(flow_camera)
 
         print(sensor_list)
