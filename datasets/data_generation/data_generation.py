@@ -65,7 +65,7 @@ def sensor_callback(sensor_data, sensor_queue, sensor_name, log_path):
         flow_abs_filepath = os.path.join(log_path_dir, flow_rel_filepath)
         flow_abs_path_dir = os.path.dirname(flow_abs_filepath)
         if not os.path.exists(flow_abs_path_dir):
-            print("creating dir: ", img_abs_path_dir)
+            print("creating dir: ", flow_abs_path_dir)
             os.makedirs(flow_abs_path_dir)
 
         np.savez(flow_abs_filepath, flow=flow)
