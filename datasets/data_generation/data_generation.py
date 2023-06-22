@@ -27,35 +27,55 @@ import random
 def sensor_callback(sensor_data, sensor_queue, sensor_name, log_path):
     sensor_queue.put((sensor_data.frame, sensor_name))
 
+    log_path_dir = os.path.dirname(log_path)
+    # create the absolute path for the image
+    img_rel_filepath = weather + "/" + sensor_name + "/{}_{}.png".format(sensor_data.frame, sensor_data.timestamp)
+    img_abs_filepath = os.path.join(log_path_dir, img_rel_filepath)
+    img_abs_path_dir = os.path.dirname(img_abs_filepath)
+    # create dir if not exists
+    if not os.path.exists(img_abs_path_dir):
+        print("creating dir: ", img_abs_path_dir)
+        os.makedirs(img_abs_path_dir)
+
     if (sensor_name[:10] == "rgb_camera"):
         data = sensor_data.raw_data
         buffer = np.frombuffer(data, dtype=np.uint8)
         buffer = buffer.reshape(sensor_data.height, sensor_data.width, 4)
         img = cv.cvtColor(buffer, cv.COLOR_BGRA2BGR)
 
-        img_filename = weather + "/" + sensor_name + "/{}_{}.png".format(sensor_data.frame, sensor_data.timestamp)
-        log_path_dir = os.path.dirname(log_path)
-        img_fullpath = os.path.join(log_path_dir, img_filename)
+        print("image filename:", img_rel_filepath)
+        print("log_path_dir:", log_path_dir)
+        print("saving image at: ", img_abs_filepath)
 
-        print("saving image at: ", img_fullpath)
-        cv.imwrite(img_fullpath, img)
+        # create dir if not exists
+        if not os.path.exists(log_path_dir):
+            os.makedirs(log_path_dir)
+
+        cv.imwrite(img_abs_filepath, img)
 
     elif (sensor_name[:11] == "flow_camera"):
         flow = np.frombuffer(sensor_data.raw_data, dtype=np.float32)
         # print(flow)
 
         # create dir if not exists
-        if not os.path.exists(weather + "/" + sensor_name + "/flow_npz/"):
-            os.mkdir(weather + "/" + sensor_name + "/flow_npz/")
+        # if not os.path.exists(weather + "/" + sensor_name + "/flow_npz/"):
+        #     os.mkdir(weather + "/" + sensor_name + "/flow_npz/")
+        flow_rel_filepath = weather + "/" + sensor_name + "/flow_npz/{}_{}.npz".format(sensor_data.frame, sensor_data.timestamp)
+        # create dirs if not exist
+        flow_abs_filepath = os.path.join(log_path_dir, flow_rel_filepath)
+        flow_abs_path_dir = os.path.dirname(flow_abs_filepath)
+        if not os.path.exists(flow_abs_path_dir):
+            print("creating dir: ", img_abs_path_dir)
+            os.makedirs(flow_abs_path_dir)
 
-        np.savez(weather + "/" + sensor_name + "/flow_npz/{}_{}.npz".format(sensor_data.frame, sensor_data.timestamp), flow=flow)
+        np.savez(flow_abs_filepath, flow=flow)
         image = sensor_data.get_color_coded_flow()
         data = image.raw_data
         # print(sensor_data,data.shape)
         buffer = np.frombuffer(data, dtype=np.uint8)
         buffer = buffer.reshape(sensor_data.height, sensor_data.width, 4)
         img = cv.cvtColor(buffer, cv.COLOR_BGRA2BGR)
-        cv.imwrite(img_fullpath, img)
+        cv.imwrite(img_abs_filepath, img)
 
 
 def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
