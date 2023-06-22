@@ -27,7 +27,9 @@ RUN pip3 install --upgrade pip
 RUN pip3 install carla==0.9.13
 RUN pip3 install numpy
 # This takes a long time because it builds the opencv from source, but it is necessary to use the cv2 library in python
-# Sometimes it can build fast if the docker image is already built and cached
+# TODO use micromamba or miniconda to install opencv (not so trivial inside docker)
+# Once the docker was built once with the next line, you can add docker instructions below it and it will use the cached image
+# If you change lines above it, it will rebuild the image and not cache opencv-python (long build time)
 RUN pip3 install opencv-python --verbose
 
 VOLUME [ "/home/carla/data_generation/dataset" ]
