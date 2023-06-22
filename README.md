@@ -27,8 +27,6 @@ pretrained_models
     -- new_model.pth
 ``` 
 
-
-
 ## dataset generation
 1. carla setup instructions(Debian CARLA installation)
     The Debain package is available for both Ubuntu 18.04 and Ubuntu 20.04, however the officially supported platform is Ubuntu 18.04.
@@ -136,4 +134,38 @@ datasets
 ```
     python3 train.py
 
+```
+
+## Dataset generation using Docker
+
+1. Build the docker container. This will take a while because of opencv-python dependency. Navigate to this git repo and run the following command:
+```
+    docker build -t user/carla_data_generation:TAG_NUMBER .
+    docker build -t sushlok/carla_data_generation:0 . # example
+```
+
+2. Create a docker volume to store the dataset. Run the following command:
+```
+    docker volume create --name carla_dataset --opt type=none --opt device=/path/to/local/dataset/folder --opt o=bind
+```
+
+3. Inside the terminal running the docker container, run the following commands:
+```
+    xhost +
+
+    docker run --privileged --name carlaserver --mount source=carla_dataset,target=/path/to/local/dataset/folder -v /tmp/.X11-unix:/tmp/.X11-unix -it --gpus all -p 2000-2002:2000-2002 sushlok/carla-data_generation:0 ./CarlaUE4.sh -RenderOffScreen
+```
+
+4. Pull the latest version of this repo inside the docker container. Inside another terminal run the following commands:
+```
+    docker exec -u 0 -it carlaserver bash # we need -u 0 for root access
+    cd data_generation
+    ./download_repo_from_github.sh # When asked enter A for replacing all files
+```
+
+5. Run the generate_traffic and data_generation scripts inside the docker container. Inside the docker container run the following commands (make sure not to overwrite previous recordings):
+```
+    cd data_generation/new_approach_master/datasets/data_generation
+    python3 generate_traffic.py --log_path /path/to/local/dataset/folder/recording02.log
+    python3 data_generation.py --log_path /path/to/local/dataset/folder/recording02.log
 ```
