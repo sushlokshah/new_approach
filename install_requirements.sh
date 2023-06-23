@@ -7,7 +7,7 @@ fi
     conda env update -f envs/gmflownet.yml
 
 # activate environment
-conda activate
-conda init
-conda activate gmflownet
+# conda activate
+# conda init
+# conda activate gmflownet
 

@@ -169,3 +169,22 @@ datasets
     python3 generate_traffic.py --log_path /path/to/local/dataset/folder/recording02.log
     python3 data_generation.py --log_path /path/to/local/dataset/folder/recording02.log
 ```
+
+
+### Training using vscode devcontainer
+1. Install docker vscode extension
+2. `.devcontainer` folder contains the docker file and configuration file.
+3. The post processing task is included in the `devcontainer.json` file which will execute `install_requirements.sh` file.
+4. After building the enviroment activate gmflownet env by using 
+
+```
+conda activate gmflownet
+
+```
+5. Edit paths from config file related to dataset
+6. Set training procedure, for ex. `train: true` 
+7. finally run train.py code using
+```
+python train.py
+```
+8. for running sweep with tune, absolute path must be provided in the config.yml file
