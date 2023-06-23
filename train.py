@@ -98,8 +98,11 @@ def sequence_loss(train_outputs, image1, image2, flow_gt, valid, gamma=0.8, use_
         flow_loss += i_weight * (valid[:, None].float()  * i_loss).mean()
 
     epe = torch.sum((flow_preds[-1] - flow_gt)**2, dim=1).sqrt()
-    epe = epe.view(-1)[valid.view(-1)]
-
+    # print(epe.shape)
+    epe = epe*valid
+    # print(epe)
+    # print(valid)
+    # print(epe.shape)
     metrics = {
         'epe': epe.mean().item(),
         '1px': (epe < 1).float().mean().item(),
@@ -263,6 +266,7 @@ def train(model,args):
             optimizer.zero_grad()
             image1, image2, flow, valid = [x.cuda() for x in data]  
             # forward pass
+            # print(image1.shape)
             flow_pred = model(image1, image2)
             # loss
             loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.training_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
@@ -319,6 +323,7 @@ def test(model,args):
                 image1, image2, flow, valid = [x.cuda() for x in data]  
                 # forward pass
                 flow_pred = model(image1, image2)
+                # print(flow_pred)
                 # loss
                 loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.testing_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
                 # add loss and metric to tensorboard
@@ -636,7 +641,7 @@ if __name__ == '__main__':
     ######################################################################
     parser = argparse.ArgumentParser()
     # about experiment
-    parser.add_argument('--config', default='/home/sushlok/new_approach/config.yml', help="config file",required=False)
+    parser.add_argument('--config', default='config.yml', help="config file",required=False)
     parser.add_argument('--name', default='gmflownet', help="name of the experiment",required=False)
     
     #about training and testing

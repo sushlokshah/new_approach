@@ -55,14 +55,14 @@ class FlowDataset(data.Dataset):
 
         index = index % len(self.image_list)
         valid = None
-        h, w = 600, 800
+        h, w = 1080, 1920
         if self.sparse:
             flow, valid = frame_utils.readFlowKITTI(self.flow_list[index])
         else:
             flow = frame_utils.read_gen(self.flow_list[index], h=h, w=w)
 
-        img1 = frame_utils.read_gen(self.image_list[index][0])
-        img2 = frame_utils.read_gen(self.image_list[index][1])
+        img1 = frame_utils.read_gen(self.image_list[index][0],h=h, w=w)
+        img2 = frame_utils.read_gen(self.image_list[index][1],h=h, w=w)
 
         flow = np.array(flow).astype(np.float32)
         img1 = np.array(img1).astype(np.uint8)

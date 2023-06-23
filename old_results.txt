@@ -1,0 +1,55 @@
+pretrained_models/gmflownet-kitti.pth  --without finetuning
+Setup: camera_-11, Loss: 0.81660455, epe:1.32232776, 1px: 0.62928194, 3px: 0.88088549,5px: 0.95109231
+Setup: camera_-10, Loss: 0.73121322, epe:1.16550509, 1px: 0.77511037, 3px: 0.92994866,5px: 0.9620984
+Setup: camera_-9, Loss: 0.80473871, epe:1.32205745, 1px: 0.73271831, 3px: 0.91246922,5px: 0.94964374
+Setup: camera_-5, Loss: 1.05048378, epe:1.73361821, 1px: 0.72295183, 3px: 0.92094105,5px: 0.95184628
+Setup: camera_-4, Loss: 1.28045444, epe:2.09900342, 1px: 0.62939188, 3px: 0.87032898,5px: 0.92613881
+Setup: camera_-3, Loss: 1.45327196, epe:2.34133555, 1px: 0.52901010, 3px: 0.82631796,5px: 0.90992688
+Setup: camera_-1, Loss: 1.54704884, epe:2.44251161, 1px: 0.66414074, 3px: 0.85753938,5px: 0.90117610
+Setup: camera_0, Loss: 1.95580457, epe:3.10470882, 1px: 0.59274636, 3px: 0.82337939,5px: 0.87543556
+Setup: camera_1, Loss: 2.28544140, epe:3.59737541, 1px: 0.56156331, 3px: 0.80717959,5px: 0.86262634
+Setup: camera_2, Loss: 1.93777916, epe:3.09138488, 1px: 0.65288959, 3px: 0.84765778,5px: 0.89197858
+Setup: camera_3, Loss: 2.58702625, epe:4.30611141, 1px: 0.35276296, 3px: 0.64537935,5px: 0.77697470
+Setup: camera_5, Loss: 2.09597207, epe:3.76277611, 1px: 0.55308764, 3px: 0.81210065,5px: 0.86796978
+Setup: camera_8, Loss: 1.53171010, epe:2.64494300, 1px: 0.51155276, 3px: 0.81484964,5px: 0.88282694
+Setup: camera_9, Loss: 1.04518599, epe:1.75816441, 1px: 0.68536937, 3px: 0.89165026,5px: 0.93010753
+Setup: camera_10, Loss: 1.14031386, epe:1.86381492, 1px: 0.65027400, 3px: 0.88173845,5px: 0.92780782
+
+checkpoints/checkpoints/gmflownet-carla.pth  --finetuned on carla front view camera
+Setup: camera_-10, Loss: 2.09897000, epe:3.19105634, 1px: 0.68072209, 3px: 0.85166748,5px: 0.89223457
+Setup: camera_-9, Loss: 1.50884694, epe:2.38059603, 1px: 0.65526007, 3px: 0.86350578,5px: 0.91004374
+Setup: camera_-4, Loss: 0.81779256, epe:1.38339230, 1px: 0.72365151, 3px: 0.91980364,5px: 0.96071760
+Setup: camera_-3, Loss: 0.84119872, epe:1.39251529, 1px: 0.57461597, 3px: 0.87148444,5px: 0.95757361
+Setup: camera_-1, Loss: 0.36547689, epe:0.59132852, 1px: 0.85342374, 3px: 0.97653619,5px: 0.99021494
+Setup: camera_0, Loss: 0.44383942, epe:0.71381059, 1px: 0.82492897, 3px: 0.97073166,5px: 0.98642818
+Setup: camera_1, Loss: 0.49741413, epe:0.80390633, 1px: 0.80298345, 3px: 0.96488456,5px: 0.98433050
+Setup: camera_2, Loss: 0.52120069, epe:0.86096237, 1px: 0.81216156, 3px: 0.94760132,5px: 0.97162262
+Setup: camera_3, Loss: 1.59934534, epe:2.69308985, 1px: 0.39908904, 3px: 0.69478502,5px: 0.83157165
+Setup: camera_8, Loss: 1.69708984, epe:2.75331711, 1px: 0.51337986, 3px: 0.81399113,5px: 0.88541234
+Setup: camera_9, Loss: 1.32294023, epe:2.08687525, 1px: 0.66912702, 3px: 0.86458084,5px: 0.91094048
+
+
+checkpoints/checkpoints/gmflownet-carla-ClearNoon.pth --all angles
+
+Setup: camera_-11, Loss: 0.80659876, epe:1.29998200, 1px: 0.63776791, 3px: 0.88165883,5px: 0.94902754
+Setup: camera_-10, Loss: 1.00123293, epe:1.58081600, 1px: 0.61545228, 3px: 0.90524012,5px: 0.95303388
+Setup: camera_-9, Loss: 1.01612255, epe:1.67735504, 1px: 0.52699804, 3px: 0.87590164,5px: 0.94397524
+Setup: camera_-5, Loss: 1.37925439, epe:2.44382278, 1px: 0.49393047, 3px: 0.84267893,5px: 0.92518561
+Setup: camera_-4, Loss: 1.21435995, epe:2.06584009, 1px: 0.49812841, 3px: 0.83505063,5px: 0.91941529
+Setup: camera_-3, Loss: 0.89186302, epe:1.47967713, 1px: 0.53498285, 3px: 0.86191245,5px: 0.95314911
+Setup: camera_-1, Loss: 0.62672788, epe:1.02986448, 1px: 0.69934703, 3px: 0.92623061,5px: 0.96858176
+Setup: camera_0, Loss: 0.68898106, epe:1.10415685, 1px: 0.66592599, 3px: 0.93900925,5px: 0.97390403
+Setup: camera_1, Loss: 0.89202361, epe:1.46580773, 1px: 0.58375147, 3px: 0.89476653,5px: 0.95117066
+Setup: camera_2, Loss: 0.93822398, epe:1.56491797, 1px: 0.62367007, 3px: 0.87803381,5px: 0.93536816
+Setup: camera_3, Loss: 1.53355931, epe:2.57209124, 1px: 0.38924697, 3px: 0.70349207,5px: 0.85438391
+Setup: camera_5, Loss: 2.31960675, epe:4.22699174, 1px: 0.36428035, 3px: 0.71879459,5px: 0.83729413
+Setup: camera_9, Loss: 1.07684403, epe:1.81282514, 1px: 0.54644550, 3px: 0.84735382,5px: 0.92362467
+Setup: camera_10, Loss: 1.36599488, epe:2.23522773, 1px: 0.52141977, 3px: 0.84594593,5px: 0.91387525
+
+
+checkpoints/checkpoints/gmflownet-carla-ClearNoon-lr=0.001.pth
+
+
+
+checkpoints/checkpoints/gmflownet-carla-ClearNoon-lr=0.00005.pth
+

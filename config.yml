@@ -1,5 +1,5 @@
 # basic inforamtion about experiment
-config: /home/sushlok/new_approach/general_file/config.yml
+config: config.yml
 name: gmflownet
 
 #update and display frequency
@@ -9,15 +9,15 @@ eval_step_freq: 10
 
 #about training and testing
 resume: false
-evaluate: false
-sweep: true
+evaluate: true
+sweep: false
 test: false
 train: false
 
 # if resume 
-weights: /home/sushlok/new_approach/pretrained_models/gmflownet-kitti.pth 
+weights: pretrained_models/gmflownet-kitti.pth 
 
-checkpoint_dir: /home/sushlok/new_approach/checkpoints/
+checkpoint_dir: checkpoints/
 
 
 # data to tensorboard
@@ -29,7 +29,7 @@ update_weights: true
 
 # if visualize
 visualize: false
-visualization_path: /home/sushlok/new_approach/visualization
+visualization_path: visualization
 
 #optimizer and optimizer specific parameters
 optimizer: 
@@ -108,14 +108,14 @@ num_workers: 4
 
 # data path
 dataset: carla
-data_root: /home/sushlok/new_approach/datasets/carla
-training_seq: ["CloudyNoon"]
-training_setup: ["camera_-3","camera_-2"]
+data_root: datasets/carla
+training_seq: ["ClearNoon"]
+training_setup: ["camera_-3"]
   # ,"camera_2"  ,"camera_8", "camera_-1" , "camera_-3" , "camera_-9" , "camera_1" , "camera_3" , "camera_9" , "camera_-10" , "camera_-4", "camera_10" , "camera_-5", "camera_-11" , "camera_5"]
 
-data_root_test: /home/sushlok/new_approach/datasets/carla
-test_seq: ["CloudyNoon"]
-test_setup: ["camera_-3","camera_-2"]
+data_root_test: datasets/carla
+test_seq: ["ClearNoon"]
+test_setup: ["camera_-3"]
 #  ,"camera_8", "camera_-1" , "camera_-3" , "camera_-9" , "camera_1" , "camera_3" , "camera_9" , "camera_-10" , "camera_-4", "camera_10" , "camera_-5", "camera_-11" , "camera_5"]
 
 
