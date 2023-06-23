@@ -175,7 +175,7 @@ datasets
 
 
 ### Training using vscode devcontainer
-1. Install docker vscode extension
+1. Install docker vscode extension. (first install docker and nvidia-docker on system before downloading vscode extension)
 2. `.devcontainer` folder contains the docker file and configuration file.
 3. The post processing task is included in the `devcontainer.json` file which will execute `install_requirements.sh` file.
 4. After building the enviroment activate gmflownet env by using 
