@@ -156,15 +156,18 @@ datasets
     docker run --privileged --name carlaserver --mount source=carla_dataset,target=/path/to/local/dataset/folder -v /tmp/.X11-unix:/tmp/.X11-unix -it --gpus all -p 2000-2002:2000-2002 sushlok/carla-data_generation:0 ./CarlaUE4.sh -RenderOffScreen
 ```
 
-4. Pull the latest version of this repo inside the docker container. Inside another terminal run the following commands:
+4. Pull the latest version of this repo inside the docker container using root user. Inside another terminal run the following commands:
 ```
     docker exec -u 0 -it carlaserver bash # we need -u 0 for root access
+    # Inside the docker container
     cd data_generation
     ./download_repo_from_github.sh # When asked enter A for replacing all files
 ```
 
-5. Run the generate_traffic and data_generation scripts inside the docker container. Inside the docker container run the following commands (make sure not to overwrite previous recordings):
+5. Run the generate_traffic and data_generation scripts inside the docker container using the regular carla user. Enter the docker container and run the following commands (make sure not to overwrite previous recordings):
 ```
+    docker exec -it carlaserver bash
+    # Inside the docker container
     cd data_generation/new_approach_master/datasets/data_generation
     python3 generate_traffic.py --log_path /path/to/local/dataset/folder/recording02.log
     python3 data_generation.py --log_path /path/to/local/dataset/folder/recording02.log
