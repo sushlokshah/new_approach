@@ -23,18 +23,19 @@ import argparse
 import logging
 import random
 
-def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
+
+def save_data(camera_sensor_queue, flow_sensor_queue, path, log_path):
     print("saving data")
     log_path_dir = os.path.dirname(log_path)
-    
+
     # create the absolute path for the image
     cam_data = list(camera_sensor_queue.queue)
     flow_data_list = list(flow_sensor_queue.queue)
-    for i in range(1,len(list(camera_sensor_queue.queue))):
-        frame_name, image_data= cam_data[i]
+    for i in range(1, len(list(camera_sensor_queue.queue))):
+        frame_name, image_data = cam_data[i]
         frame_name, flow_data = flow_data_list[i]
         flow = np.frombuffer(flow_data.raw_data, dtype=np.float32)
-        
+
         # if flow mag is very small then skip
         # if np.mean(np.abs(flow)) < 0.5:
         #     continue
@@ -51,12 +52,11 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
         if not os.path.exists(img_abs_path_dir_old):
             print("creating dir: ", img_abs_path_dir_old)
             os.makedirs(img_abs_path_dir_old)
-            
+
         if not os.path.exists(img_abs_path_dir_current):
             print("creating dir: ", img_abs_path_dir_current)
             os.makedirs(img_abs_path_dir_current)
-        
-        
+
         # flow rel filepath
         flow_rel_filepath = weather + "/" + path + "/flow_npz/{}.npz".format(image_data.frame)
         # create dirs if not exist
@@ -65,7 +65,7 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
         if not os.path.exists(flow_abs_path_dir):
             print("creating dir: ", flow_abs_path_dir)
             os.makedirs(flow_abs_path_dir)
-            
+
         # flow vis
         flow_vis_rel_filepath = weather + "/" + path + "/flow_vis/{}.png".format(image_data.frame)
         flow_vis_abs_filepath = os.path.join(log_path_dir, flow_vis_rel_filepath)
@@ -74,24 +74,22 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
             print("creating dir: ", flow_vis_abs_path_dir)
             os.makedirs(flow_vis_abs_path_dir)
 
-        
-
         current_data = image_data.raw_data
         old_data = cam_data[i-1][1].raw_data
         current_buffer = np.frombuffer(current_data, dtype=np.uint8)
         old_buffer = np.frombuffer(old_data, dtype=np.uint8)
-        
+
         current_buffer = current_buffer.reshape(image_data.height, image_data.width, 4)
         old_buffer = old_buffer.reshape(image_data.height, image_data.width, 4)
-        
+
         current_img = cv.cvtColor(current_buffer, cv.COLOR_BGRA2BGR)
         old_img = cv.cvtColor(old_buffer, cv.COLOR_BGRA2BGR)
-        
+
         cv.imwrite(img_abs_filepath_old, old_img)
         cv.imwrite(img_abs_filepath_current, current_img)
-        
+
         np.savez(flow_abs_filepath, flow=flow)
-        
+
         # flow vis
         flow_vis = flow_data.get_color_coded_flow()
         data = flow_vis.raw_data
@@ -100,8 +98,6 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
         buffer = buffer.reshape((flow_vis.height, flow_vis.width, 4))
         flow_vis_img = cv.cvtColor(buffer, cv.COLOR_BGRA2BGR)
         cv.imwrite(flow_vis_abs_filepath, flow_vis_img)
-        
-    
 
 
 def sensor_callback(sensor_data, camera_queue, flow_queue, sensor_name, log_path):
@@ -110,6 +106,7 @@ def sensor_callback(sensor_data, camera_queue, flow_queue, sensor_name, log_path
     else:
         sensor_queue = flow_queue
     sensor_queue.put((sensor_data.frame, sensor_data))
+
 
 def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
     # client = carla.Client('127.0.0.1', 2000)
@@ -216,7 +213,7 @@ def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
         camera.listen(lambda data: sensor_callback(data, camera_sensor_queue, flow_sensor_queue, "rgb_camera_{}".format(i), log_path))
         sensor_list.append(camera)
 
-        flow_camera.listen(lambda data: sensor_callback(data, camera_sensor_queue, flow_sensor_queue,"flow_camera_{}".format(i), log_path))
+        flow_camera.listen(lambda data: sensor_callback(data, camera_sensor_queue, flow_sensor_queue, "flow_camera_{}".format(i), log_path))
         sensor_list.append(flow_camera)
 
         print(sensor_list)
@@ -243,11 +240,11 @@ def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
 
             # except Empty:
             #     print("    Some of the sensor information is missed")
-        
+
         # print(list(camera_sensor_queue.queue))
         # print(list(flow_sensor_queue.queue))
-        
-        save_data(camera_sensor_queue, flow_sensor_queue,"camera_{}".format(i), log_path)
+
+        save_data(camera_sensor_queue, flow_sensor_queue, "camera_{}".format(i), log_path)
 
     finally:
         print("distoring the ego_vehicle")
@@ -271,7 +268,7 @@ if __name__ == "__main__":
     log_path = args.log_path
 
     global print_info_once
-    print_info_once = True 
+    print_info_once = True
 
     weather_list = [
         # carla.WeatherParameters.SoftRainNight,
