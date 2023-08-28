@@ -153,7 +153,7 @@ datasets
 ```
     xhost +
 
-    docker run --privileged --name carlaserver --mount source=carla_dataset,target=/path/to/local/dataset/folder -v /tmp/.X11-unix:/tmp/.X11-unix -it --gpus all -p 2000-2002:2000-2002 sushlok/carla-data_generation:0 ./CarlaUE4.sh -RenderOffScreen
+    docker run --privileged --name carlaserver --mount source=carla_dataset,target=/path/to/local/dataset/folder -v /tmp/.X11-unix:/tmp/.X11-unix -it --gpus all -p 2000-2002:2000-2002 sushlok/carla_data_generation:0 ./CarlaUE4.sh -RenderOffScreen
 ```
 
 4. Pull the latest version of this repo inside the docker container using root user. Inside another terminal run the following commands:
