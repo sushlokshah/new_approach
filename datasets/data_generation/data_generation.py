@@ -173,12 +173,16 @@ def main(world, weather_param, weather, num_camera, i, num_imgs, log_path):
             os.makedirs(weather)
         sensor_list = []
 
-        if (abs(i) <= num_camera//4):
+        if num_camera == 1:
             position_x = 1.7
             position_z = 3
-        elif (abs(i) > num_camera//4):
-            position_x = -1.7
-            position_z = 3
+        else:
+            if (abs(i) <= num_camera//4):
+                position_x = 1.7
+                position_z = 3
+            elif (abs(i) > num_camera//4):
+                position_x = -1.7
+                position_z = 3
 
         blueprint_library = world.get_blueprint_library()
 
@@ -264,6 +268,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='CARLA Sensor Data Recorder')
     parser.add_argument('--log_path', type=str, help='Path to the log file')
+    parser.add_argument('--num_camera', type=int, help='Number of cameras', default=1)
     args = parser.parse_args()
     log_path = args.log_path
 
@@ -317,7 +322,6 @@ if __name__ == "__main__":
         # 'WetCloudyNight'
     ]
 
-    num_camera = 8
     # -7 to 7
     num_imgs = 500
     client = carla.Client('localhost', 2000)
@@ -329,10 +333,19 @@ if __name__ == "__main__":
         weather_param = weather_list[j]
         weather = "datasets/carla/" + weather_name_list[j]
         print(weather)
-        # i = -(num_camera//2 - 1)
-        for i in range(-(num_camera//2 - 1), num_camera//2 + 1):
+        # i = -(args.num_camera//2 - 1)
+
+        if args.num_camera == 1:
+            i = 0
             try:
-                main(world, weather_param, weather, num_camera, i, num_imgs, log_path)
+                main(world, weather_param, weather, args.num_camera, i, num_imgs, log_path)
             except RuntimeError as e:
                 print(e)
                 continue
+        else:
+            for i in range(-(args.num_camera//2 - 1), args.num_camera//2 + 1):
+                try:
+                    main(world, weather_param, weather, args.num_camera, i, num_imgs, log_path)
+                except RuntimeError as e:
+                    print(e)
+                    continue
