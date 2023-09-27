@@ -287,8 +287,8 @@ if __name__ == "__main__":
                                 'WetCloudyNight': carla.WeatherParameters.WetCloudyNight}
     
     parser = argparse.ArgumentParser(description='CARLA Sensor Data Recorder')
-    parser.add_argument('--log_path', type=str, default='/home/sushlok/new_approach/datasets/data_generation/recording03.log', help='Path to the log file')
-    parser.add_argument('--env_state', type=str, default = '/home/sushlok/new_approach/datasets/data_generation/env_config.yaml', help='config file for the environment and recorder car')
+    parser.add_argument('--log_path', type=str, help='Path to the log file')
+    parser.add_argument('--env_state', type=str, help='config file for the environment and recorder car')
     args = parser.parse_args()
     log_path = args.log_path
     
