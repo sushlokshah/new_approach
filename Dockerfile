@@ -32,4 +32,7 @@ RUN pip3 install numpy
 # If you change lines above it, it will rebuild the image and not cache opencv-python (long build time)
 RUN pip3 install opencv-python --verbose
 
-VOLUME [ "/home/carla/data_generation/dataset" ]
+RUN mkdir /home/carla/data_generation/new_approach
+COPY . /home/carla/data_generation/new_approach
+
+VOLUME [ "/data/andi/carla" ]
