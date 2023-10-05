@@ -1,0 +1,11 @@
+name: carla
+channels:
+  - conda-forge
+dependencies:
+  - python=3.6
+  - pip
+  - opencv
+  - numpy
+  - pyyaml
+  - pip:
+    - carla==0.9.13

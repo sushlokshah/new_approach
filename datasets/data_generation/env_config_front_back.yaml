@@ -1,0 +1,92 @@
+weather_list: [ 
+#   'SoftRainNight',
+  'ClearNoon',
+  'CloudyNoon',
+#   'HardRainNight',
+  'WetNoon',
+  'WetCloudyNoon',
+#   'MidRainyNoon',
+#   'HardRainNoon',
+  'SoftRainNoon',
+  'ClearSunset',
+#   'CloudySunset',
+#   'WetSunset',
+#   "WetCloudySunset",
+#   "MidRainSunset",
+#   'HardRainSunset',
+#   'SoftRainSunset',
+#   'ClearNight',
+#   'CloudyNight',
+#   'WetNight',
+#   'WetCloudyNight'
+]
+
+num_camera_images: 1000
+
+sensor_config:
+  {
+  'cam0': {'name': 'front', 
+            'pos_x': 1.7, 
+            'pos_y': 0.0, 
+            'pos_z': 2.0,
+            'roll': 0.0, 
+            'pitch': 0.0 , 
+            'yaw': 0.0},
+          
+#   'cam1': {'name': 'front_right',
+#            'pos_x': 1.7, 
+#            'pos_y': -0.5, 
+#            'pos_z': 2.0,
+#            'roll': 0.0, 
+#            'pitch': 0.0, 
+#            'yaw': -45.0},
+
+#   'cam2': {'name': 'right', 
+#           'pos_x': 1.7, 
+#           'pos_y': -1.0, 
+#           'pos_z': 2.0,
+#           'roll': 0.0, 
+#           'pitch': 0.0 , 
+#           'yaw': -90.0},
+
+#   'cam3': {'name': 'rear_right', 
+#           'pos_x': 1.7, 
+#           'pos_y': -1.5, 
+#           'pos_z': 2.0,
+#           'roll': 0.0, 
+#           'pitch': 0.0 , 
+#           'yaw': -135.0},
+
+  'cam4': {'name': 'rear', 
+          'pos_x': 1.7, 
+          'pos_y': 0.0, 
+          'pos_z': 2.0,
+          'roll': 0.0, 
+          'pitch': 0.0, 
+          'yaw': 180.0},
+
+#   'cam5': {'name': 'rear_left', 
+#           'pos_x': 1.7, 
+#           'pos_y': 0.5, 
+#           'pos_z': 2.0,
+#           'roll': 0.0, 
+#           'pitch': 0.0, 
+#           'yaw': 135.0},
+
+#   'cam6': {'name': 'left', 
+#           'pos_x': 1.7, 
+#           'pos_y': 1.0, 
+#           'pos_z': 2.0,
+#           'roll': 0.0, 
+#           'pitch': 0.0, 
+#           'yaw': 90.0},
+
+#   'cam7': {'name': 'front_left', 
+#           'pos_x': 1.7, 
+#           'pos_y': 1.5, 
+#           'pos_z': 2.0,
+#           'roll': 0.0, 
+#           'pitch': 0.0 , 
+#           'yaw': 45.0}
+}
+
