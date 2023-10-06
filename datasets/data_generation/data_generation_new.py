@@ -24,7 +24,7 @@ import logging
 import random
 from pprint import pprint
 
-def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
+def save_data(camera_sensor_queue, flow_sensor_queue, data_dir, log_path):
     print("saving data")
     log_path_dir = os.path.dirname(log_path)
     
@@ -42,8 +42,8 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
         print("flow mag:", np.mean(np.abs(flow)))
         if np.mean(np.abs(flow)) < 0.01:
             continue
-        img_rel_filepath_old = path + "/image_0/{}.png".format(image_data.frame)
-        img_rel_filepath_current = path + "/image_1/{}.png".format(image_data.frame)
+        img_rel_filepath_old = data_dir + "/image_0/{}.png".format(image_data.frame)
+        img_rel_filepath_current = data_dir + "/image_1/{}.png".format(image_data.frame)
         img_abs_filepath_old = os.path.join(log_path_dir, img_rel_filepath_old)
         img_abs_path_dir_old = os.path.dirname(img_abs_filepath_old)
         img_abs_filepath_current = os.path.join(log_path_dir, img_rel_filepath_current)
@@ -59,7 +59,7 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
         
         
         # flow rel filepath
-        flow_rel_filepath = path + "/flow_npz/{}.npz".format(image_data.frame)
+        flow_rel_filepath = data_dir + "/flow_npz/{}.npz".format(image_data.frame)
         # create dirs if not exist
         flow_abs_filepath = os.path.join(log_path_dir, flow_rel_filepath)
         flow_abs_path_dir = os.path.dirname(flow_abs_filepath)
@@ -68,7 +68,7 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
             os.makedirs(flow_abs_path_dir)
             
         # flow vis
-        flow_vis_rel_filepath = path + "/flow_vis/{}.png".format(image_data.frame)
+        flow_vis_rel_filepath = data_dir + "/flow_vis/{}.png".format(image_data.frame)
         flow_vis_abs_filepath = os.path.join(log_path_dir, flow_vis_rel_filepath)
         flow_vis_abs_path_dir = os.path.dirname(flow_vis_abs_filepath)
         if not os.path.exists(flow_vis_abs_path_dir):
@@ -117,7 +117,7 @@ def sensor_callback(sensor_data, camera_queue, flow_queue, sensor_name, log_path
         sensor_queue = flow_queue
     sensor_queue.put((sensor_data.frame, sensor_data))
 
-def main(world, weather_param, path, sensor, log_path, env_state):
+def main(world, weather_param, data_dir, sensor, log_path, env_state):
     
     # client = carla.Client('127.0.0.1', 2000)
     # client.set_timeout(10.0)
@@ -178,8 +178,8 @@ def main(world, weather_param, path, sensor, log_path, env_state):
         flow_sensor_queue = Queue()
 
         # create dir if not exist
-        if not os.path.exists(path):
-            os.makedirs(path)
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
         sensor_list = []
         num_images = env_state['num_camera_images']
         
@@ -247,7 +247,7 @@ def main(world, weather_param, path, sensor, log_path, env_state):
         # print(list(camera_sensor_queue.queue))
         # print(list(flow_sensor_queue.queue))
         
-        save_data(camera_sensor_queue, flow_sensor_queue, path + "/" + sensor['name'], log_path)
+        save_data(camera_sensor_queue, flow_sensor_queue, data_dir + "/" + sensor['name'], log_path)
 
     finally:
         print("distoring the ego_vehicle")
@@ -288,6 +288,7 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='CARLA Sensor Data Recorder')
     parser.add_argument('--log_path', type=str, default='/home/sushlok/new_approach/datasets/data_generation/recording03.log', help='Path to the log file')
+    parser.add_argument('--data_dir', type=str, default='/home/sushlok/new_approach/datasets/data_generation/datasets2', help='Path to the dataset directory')
     parser.add_argument('--env_state', type=str, default = '/home/sushlok/new_approach/datasets/data_generation/env_config.yaml', help='config file for the environment and recorder car')
     args = parser.parse_args()
     log_path = args.log_path
@@ -297,20 +298,25 @@ if __name__ == "__main__":
     with open(args.env_state, 'r') as f:
         env_state = yaml.load(f, Loader=yaml.FullLoader)
         
-        
     weather_list = env_state['weather_list']
+    print("weather_list:\n", yaml.dump(weather_list, default_flow_style=False, sort_keys=False))
 
     client = carla.Client('localhost', 2000)
     client.set_timeout(2.0)
     world = client.get_world()
 
+    # Strip / from the end of the data_dir
+    if args.data_dir[-1] == '/':
+        args.data_dir = args.data_dir[:-1]
+
     for weather in weather_list:
         weather_param = weather_parameters_dict[weather]
-        path = "/home/sushlok/new_approach/datasets/data_generation/datasets2/" + weather
-        os.makedirs(path, exist_ok=True)
+        data_dir = args.data_dir + os.sep + weather
+        # make the directory with the same permissions as the parent directory
+        os.makedirs(data_dir, mode=0o777, exist_ok=True)
         for key, sensor in env_state['sensor_config'].items():
             try:
-                main(world, weather_param, path, sensor, log_path, env_state)
+                main(world, weather_param, data_dir, sensor, log_path, env_state)
             except RuntimeError as e:
                 print(e)
                 continue

@@ -12,15 +12,12 @@ RUN rm /etc/apt/sources.list.d/nvidia-ml.list
 RUN apt-get update 
 RUN apt-get install -y curl tar
 
-# Give the user carla ownership of the data_generation folder in order to be able to write to it and create folders
-RUN mkdir /home/carla/data_generation
-RUN mkdir /home/carla/data_generation/new_approach
-RUN mkdir /home/carla/data_generation/dataset
-RUN chown -R carla:carla /home/carla/data_generation
-RUN chown -R carla:carla /home/carla/data_generation/new_approach
-RUN chown -R carla:carla /home/carla/data_generation/dataset
-
+# Create all necessary folders and give the user carla ownership of them
 USER carla
+
+# RUN mkdir /home/carla/data_generation
+RUN mkdir /home/carla/new_approach
+COPY . /home/carla/new_approach
 
 # Install micromaba
 RUN curl -Ls https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
@@ -29,10 +26,5 @@ RUN ./bin/micromamba shell init -s bash -p /home/carla/micromamba && cat microma
 ENV MAMBA_ROOT_PREFIX=/home/carla/micromamba
 
 # Install the conda environment
-COPY env_data_generation.yaml /home/carla/data_generation/env_data_generation.yaml
-RUN ./bin/micromamba create -f /home/carla/data_generation/env_data_generation.yaml
-
-COPY . /home/carla/data_generation/new_approach
-
-# Add the pip installed packages to python path so that user root can also use them
-ENV PYTHONPATH "${PYTHONPATH}:/home/carla/.local/lib/python3.6/site-packages"
+COPY env_data_generation.yaml /home/carla/env_data_generation.yaml
+RUN ./bin/micromamba create -f /home/carla/env_data_generation.yaml

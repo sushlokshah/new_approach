@@ -1,14 +1,14 @@
 weather_list: [ 
 #   'SoftRainNight',
-#   'ClearNoon',
+  'ClearNoon',
   'CloudyNoon',
 #   'HardRainNight',
-#   'WetNoon',
-#   'WetCloudyNoon',
+  'WetNoon',
+  'WetCloudyNoon',
 #   'MidRainyNoon',
 #   'HardRainNoon',
-#   'SoftRainNoon',
-#   'ClearSunset',
+  'SoftRainNoon',
+  'ClearSunset',
 #   'CloudySunset',
 #   'WetSunset',
 #   "WetCloudySunset",
@@ -21,7 +21,7 @@ weather_list: [
 #   'WetCloudyNight'
 ]
 
-num_camera_images: 100
+num_camera_images: 1000
 
 sensor_config:
   {
@@ -87,5 +87,6 @@ sensor_config:
           'pos_z': 2.0,
           'roll': 0.0, 
           'pitch': 0.0 , 
-          'yaw': 45.0}}
+          'yaw': 45.0}
+}
 
