@@ -148,6 +148,7 @@ datasets
 ```
     docker volume create --name carla_dataset --opt type=none --opt device=/path/to/local/host/dataset/folder --opt o=bind
 ```
+ATTENTION! `/path/to/local/host/dataset/folder` has to belong to the same user ID as the carla user of the docker container which is 1000.
 
 3. Inside the terminal running the docker container, run the following commands:
 ```
