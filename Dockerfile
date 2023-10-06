@@ -15,10 +15,6 @@ RUN apt-get install -y curl tar
 # Create all necessary folders and give the user carla ownership of them
 USER carla
 
-# RUN mkdir /home/carla/data_generation
-RUN mkdir /home/carla/new_approach
-COPY . /home/carla/new_approach
-
 # Install micromaba
 RUN curl -Ls https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 COPY micromamba_bashrc.txt /home/carla/micromamba_bashrc.txt 
@@ -28,3 +24,7 @@ ENV MAMBA_ROOT_PREFIX=/home/carla/micromamba
 # Install the conda environment
 COPY env_data_generation.yaml /home/carla/env_data_generation.yaml
 RUN ./bin/micromamba create -f /home/carla/env_data_generation.yaml
+
+# Finally copy the code
+RUN mkdir /home/carla/new_approach
+COPY . /home/carla/new_approach
