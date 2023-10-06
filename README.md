@@ -138,7 +138,7 @@ datasets
 
 ## Dataset generation using Docker
 
-1. Build the docker container. This will take a while because of opencv-python dependency. Navigate to this git repo and run the following command:
+1. Build the docker container. Navigate to this git repo and run the following command. If you update the source code of this repo and want to use it in the docker container you need to rebuild the docker container, as this repo is copied into the docker container as the last building step:
 ```
     docker build -t user/carla_data_generation:TAG_NUMBER .
     docker build -t sushlok/carla_data_generation:0 . # example
@@ -146,33 +146,23 @@ datasets
 
 2. Create a docker volume to store the dataset. Run the following command:
 ```
-    docker volume create --name carla_dataset --opt type=none --opt device=/path/to/local/dataset/folder --opt o=bind
+    docker volume create --name carla_dataset --opt type=none --opt device=/path/to/local/host/dataset/folder --opt o=bind
 ```
 
 3. Inside the terminal running the docker container, run the following commands:
 ```
     xhost +
 
-    docker run --privileged --name carlaserver --mount source=carla_dataset,target=/path/to/local/dataset/folder -v /tmp/.X11-unix:/tmp/.X11-unix -it --gpus all -p 2000-2002:2000-2002 sushlok/carla_data_generation:0 ./CarlaUE4.sh -RenderOffScreen
+    docker run --name carlaserver --mount source=carla_dataset,target=/path/to/docker/dataset/folder -v /tmp/.X11-unix:/tmp/.X11-unix -it --rm --gpus all -p 2000-2002:2000-2002 sushlok/carla_data_generation:0 ./CarlaUE4.sh -RenderOffScreen
 ```
-
-4. Pull the latest version of this repo inside the docker container using root user. Inside another terminal run the following commands:
-```
-    docker exec -u 0 -it carlaserver bash # we need -u 0 for root access
-    # Inside the docker container
-    cd data_generation
-    ./download_repo_from_github.sh # When asked enter A for replacing all files
-```
-
 5. Run the generate_traffic and data_generation scripts inside the docker container using the regular carla user. Enter the docker container and run the following commands (make sure not to overwrite previous recordings):
 ```
     docker exec -it carlaserver bash
     # Inside the docker container
-    cd data_generation/new_approach_master/datasets/data_generation
-    python3 generate_traffic.py --log_path /path/to/local/dataset/folder/recording02.log
-    python3 data_generation.py --log_path /path/to/local/dataset/folder/recording02.log
+    cd new_approach/datasets/data_generation
+    python3 generate_traffic.py --log_path /path/to/local/docker/dataset/folder/recording02.log
+    python3 data_generation.py --log_path /path/to/local/docker/dataset/folder/recording02.log --data_dir /path/to/local/docker/dataset/folder --env_state env_config.yaml
 ```
-
 
 ### Training using vscode devcontainer
 1. Install docker vscode extension. (first install docker and nvidia-docker on system before downloading vscode extension)
