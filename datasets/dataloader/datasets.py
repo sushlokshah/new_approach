@@ -257,29 +257,32 @@ class Carla_Dataset(FlowDataset):
             self.is_test = True
 
         self.is_validate = is_validate
-        image_dirs = []
         # datasets/vkitti/vkitti_1.3.1_rgb
-        # print(seq, setup_type)
-        start = 0
         for s in seq:
             for t in setup_type:
-                # print(sorted(glob(osp.join(root, '%s' %(s) ,'rgb_%s/*.png' % (t)))))
-                image_dirs += sorted(glob(osp.join(root, '%s' %
-                                     (s), 'rgb_%s/*.png' % (t))))
-                # print(image_dirs)
-                for i in range(start, len(image_dirs)-1):
-                    img1 = image_dirs[i]
-                    img2 = image_dirs[i+1]
-                    self.image_list += [[img2, img1]]
-                    self.extra_info += [[img2.split('/')[-1]]]
-                start = len(image_dirs)
+                image_0_dirs = sorted(glob(osp.join(root, '%s' %
+                                        (s), '%s' %(t), 'image_0/*.png')))
+                image_1_dirs = sorted(glob(osp.join(root, '%s' %
+                                        (s), '%s' %(t), 'image_1/*.png')))
+                flow_dirs = sorted(glob(osp.join(root, '%s' %
+                                         (s), '%s' %(t), 'flow_npz/*.npz')))
+                print('Sequence {}, Setup {}, image 0 dirs {} image 1 dirs {} flow dirs {}'.format(
+                    s, t, len(image_0_dirs), len(image_1_dirs), len(flow_dirs)))
+                assert(len(image_0_dirs) == len(image_1_dirs) == len(flow_dirs))
+                print('Asserted image0, image1, and flow lists are of equal length')
+                
+                # add the image pairs to the image list, and flow dirs to total flow list
+                for image_0, image_1  in zip(image_0_dirs, image_1_dirs):
+                    self.image_list += [[image_1, image_0]]
+                    self.extra_info += [[image_1.split('/')[-1]]]
+                self.flow_list += flow_dirs
 
-        # if split == 'training':
-        #     for s in seq:
-            # for t in setup_type:
-                self.flow_list += sorted(glob(osp.join(root, '%s' %
-                                         (s), 'flow_%s/flow_npz/*.npz' % (t))))
-
+        # for debugging purposes
+        with open ('data_list.txt', 'w') as f:
+            for i, image_pair_flow in enumerate(zip(self.image_list, self.flow_list)):
+                image_pair = image_pair_flow[0]
+                flow = image_pair_flow[1]
+                f.write('{} {} {}\n'.format(i, image_pair, flow))
 
 def fetch_dataloader(args, config=None, TRAIN_DS='C+T+K/S'):
     """ Create the data loader for the corresponding trainign set """

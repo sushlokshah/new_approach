@@ -253,8 +253,7 @@ def train(model,args):
     
     aug_params = {'crop_size': args.training_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
     train_dataset = datasets.Carla_Dataset(aug_params, split='training', root=args.data_root, seq= args.training_seq, setup_type = args.training_setup)
-    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.training_parameters['batch_size'], shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
-    # print(len(train_dataset))
+    train_loader = DataLoader(train_dataset, batch_size=args.training_parameters['batch_size'], shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
     # load optimizer and scheduler
     optimizer, scheduler = fetch_optimizer(args, model, args.training_parameters['lr'], len(train_loader), args.training_parameters['num_epochs'])
     scaler = GradScaler(enabled=args.mixed_precision)
@@ -685,7 +684,7 @@ if __name__ == '__main__':
     #hyperparameters
     # all defined in config file
     
-    sys.argv = ['-f']
+    # sys.argv = ['-f']
     args = parser.parse_args()
     # load arguments from config file
     # print(args.config)
