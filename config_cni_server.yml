@@ -1,0 +1,125 @@
+# basic inforamtion about experiment
+config: config_cni_server.yml
+name: front_back
+
+#update and display frequency
+display_step_freq: 10
+save_step_freq: 100
+eval_step_freq: 10
+
+#about training and testing
+resume: false
+evaluate: false
+sweep: false
+test: false
+train: true
+
+# if resume 
+weights: pretrained_models/gmflownet-kitti.pth 
+
+checkpoint_dir: checkpoints/
+
+# data to tensorboard
+update_sweep_data: false
+update_training_loss: true
+update_validation_loss: true
+update_weights: true
+
+# if visualize
+visualize: false
+visualization_path: visualization
+
+#optimizer and optimizer specific parameters
+optimizer: 
+  optimizer_name: AdamW
+  weight_decay: 0.0001
+  eps: 1e-08
+
+#learning rate scheduler and scheduler specific parameters
+if_scheduler: false
+scheduler: StepLR
+
+# hyperparameters specification for hyperparameter sweep
+num_sweeps: 10
+gpus_per_trial: 1
+
+hyperparameters:
+  learning_rate:
+    type: float
+    min: 0.00001
+    max: 0.1
+  batch_size:
+    type: int
+    min: 1
+    max: 3
+    step: 2
+  num_epochs:
+    type: int
+    min: 10
+    max: 100
+    step: 10
+  dropout:
+    type: float
+    min: 0.1
+    max: 0.9
+  iterations:
+    type: int
+    min: 1
+    max: 10
+    step: 1
+  flow_weighting_factor_gamma:
+    type: float
+    min: 0.1
+    max: 0.9
+    step: 0.1
+
+# hyperparameters for training
+training_parameters:
+  lr: 0.0005
+  batch_size: 32
+  num_epochs: 1000
+  dropout: 0.1
+  iterations: 1
+  flow_weighting_factor_gamma: 0.8
+  clip_grad_norm: 1.0
+
+# hyperparameters for testing
+testing_parameters:
+  batch_size: 32
+  iterations: 1
+  flow_weighting_factor_gamma: 0.1
+  clip_grad_norm: 1.0
+
+# augmentations list
+training_augmentations:
+  RandomCrop:
+    size: [128, 128]
+
+  
+
+testing_augmentations:
+  RandomCrop:
+    size: [128, 128]
+
+num_workers: 40
+
+
+# data path
+dataset: front_back
+data_root: /data/andi/carla/front_back
+training_seq: ["ClearNoon", "ClearSunset", "CloudyNoon", "SoftRainNoon", "WetCloudyNoon", "WetNoon"]
+training_setup: ["front", "rear"]
+  # ,"camera_2"  ,"camera_8", "camera_-1" , "camera_-3" , "camera_-9" , "camera_1" , "camera_3" , "camera_9" , "camera_-10" , "camera_-4", "camera_10" , "camera_-5", "camera_-11" , "camera_5"]
+
+data_root_test: /data/andi/carla/front_back
+test_seq: ["ClearNoon", "ClearSunset", "CloudyNoon", "SoftRainNoon", "WetCloudyNoon", "WetNoon"]
+test_setup: ["front", "rear"]
+#  ,"camera_8", "camera_-1" , "camera_-3" , "camera_-9" , "camera_1" , "camera_3" , "camera_9" , "camera_-10" , "camera_-4", "camera_10" , "camera_-5", "camera_-11" , "camera_5"]
+
+
+# model specific parameters
+use_mix_attn: false 
+alternate_corr: false
+mixed_precision: false
+
+# loss parameter
