@@ -59,13 +59,30 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
         
         
         # flow rel filepath
-        flow_rel_filepath = path + "/flow_npz/{}.npz".format(image_data.frame)
+        flow_rel_filepath = path + "/flow_data/{}.png".format(image_data.frame)
         # create dirs if not exist
         flow_abs_filepath = os.path.join(log_path_dir, flow_rel_filepath)
         flow_abs_path_dir = os.path.dirname(flow_abs_filepath)
         if not os.path.exists(flow_abs_path_dir):
             print("creating dir: ", flow_abs_path_dir)
             os.makedirs(flow_abs_path_dir)
+            
+        # save flow in kitti format
+        # flow_rel_filepath = path + "/flow/{}.png".format(image_data.frame)
+        # flow_abs_filepath = os.path.join(log_path_dir, flow_rel_filepath)
+        # flow_abs_path_dir = os.path.dirname(flow_abs_filepath)
+        # if not os.path.exists(flow_abs_path_dir):
+        #     print("creating dir: ", flow_abs_path_dir)
+        #     os.makedirs(flow_abs_path_dir)
+        flow = flow.reshape((image_data.height, image_data.width, 2))
+        flow_kitti = np.zeros((image_data.height, image_data.width, 3))
+        flow_kitti[:,:,0] = (flow[:,:,0] + 2)*(1/4)
+        flow_kitti[:,:,1] = (flow[:,:,1] + 2)*(1/4)
+        # map flow to 16 bit image
+        flow_kitti = (flow_kitti*65535).astype(np.uint16)
+        
+        flow_kitti[:,:,2] = np.ones((image_data.height, image_data.width)).astype(np.uint16)
+        
             
         # flow vis
         flow_vis_rel_filepath = path + "/flow_vis/{}.png".format(image_data.frame)
@@ -95,8 +112,8 @@ def save_data(camera_sensor_queue, flow_sensor_queue,path, log_path):
         
         cv.imwrite(img_abs_filepath_old, old_img)
         cv.imwrite(img_abs_filepath_current, current_img)
-        
-        np.savez(flow_abs_filepath, flow=flow)
+        cv.imwrite(flow_abs_filepath, flow_kitti)
+        # np.savez(flow_abs_filepath, flow=flow)
         
         # flow vis
         flow_vis = flow_data.get_color_coded_flow()
@@ -306,7 +323,7 @@ if __name__ == "__main__":
 
     for weather in weather_list:
         weather_param = weather_parameters_dict[weather]
-        path = "/home/sushlok/new_approach/datasets/data_generation/datasets2/" + weather
+        path = "./datsets/" + weather
         os.makedirs(path, exist_ok=True)
         for key, sensor in env_state['sensor_config'].items():
             try:

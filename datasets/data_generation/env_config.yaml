@@ -21,7 +21,7 @@ weather_list: [
 #   'WetCloudyNight'
 ]
 
-num_camera_images: 1000
+num_camera_images: 100
 
 sensor_config:
   {
