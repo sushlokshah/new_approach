@@ -12,20 +12,18 @@ import os.path as osp
 
 from utils import frame_utils
 from utils.augmentor import FlowAugmentor, SparseFlowAugmentor
-
+import albumentations as A 
 import sys
 
 
 class FlowDataset(data.Dataset):
-    def __init__(self, aug_params=None, sparse=False):
-        self.augmentor = None
-        self.sparse = sparse
-        if aug_params is not None:
-            if sparse:
-                self.augmentor = SparseFlowAugmentor(**aug_params)
-            else:
-                self.augmentor = FlowAugmentor(**aug_params)
-
+    def __init__(self, aug_params):
+        # self.augmentor = None
+        # self.sparse = sparse
+        self.augmentor = A.Compose([A.RandomCrop(width=aug_params['crop'][0], height=aug_params['crop'][1], p=1.0),
+                                    A.HorizontalFlip(p=0.5),
+                                    A.RandomRotate90(p=0.5),
+                                    ])
         self.is_test = False
         self.is_validate = False
         self.init_seed = False
@@ -39,13 +37,14 @@ class FlowDataset(data.Dataset):
         img1_path = data.image1
         flow_path = data.flow
         
-        img0 = cv.imread(img0_path)
-        img1 = cv.imread(img1_path)
-        flow = frame_utils.readFlowKITTI(flow_path)
-        flow, valid = flow.astype(np.float32)
-        flow[0] = flow[0] * (img0.shape[1])
-        flow[1] = flow[1] * (img0.shape[0])
-        
+        img1 = cv.imread(img0_path)
+        img2 = cv.imread(img1_path)
+        flow, valid = frame_utils.readFlowKITTI(flow_path)
+        flow = flow.astype(np.float32)
+        flow[:,:,0] = flow[:,:,0] * 256
+        flow[:,:,1] = flow[:,:,1] * 256
+        # flow = flow[:,:,:2]
+        # valid = flow[:, :, 2] > 1
 
         # grayscale images
         if len(img1.shape) == 2:
@@ -56,16 +55,19 @@ class FlowDataset(data.Dataset):
             img2 = img2[..., :3]
 
         if self.augmentor is not None:
-            if self.sparse:
-                img1, img2, flow, valid = self.augmentor(
-                    img1, img2, flow, valid)
-            else:
-                img1, img2, flow = self.augmentor(img1, img2, flow)
+            # print(img1.shape,img2.shape, flow.shape, valid.shape)
+            data = {"image": img1, "masks": [img2, flow ,valid]}
+            augmented = self.augmentor(**data)
+            img1 = augmented["image"]
+            img2 = augmented["masks"][0]
+            flow = augmented["masks"][1]
+            # print(flow.shape)
+            valid = augmented["masks"][2]
 
         img1 = torch.from_numpy(img1).permute(2, 0, 1).float()
         img2 = torch.from_numpy(img2).permute(2, 0, 1).float()
         flow = torch.from_numpy(flow).permute(2, 0, 1).float()
-
+        # print(flow.shape)
         if valid is not None:
             valid = torch.from_numpy(valid)
         else:
@@ -87,14 +89,14 @@ class data_association():
     
 
 class Carla_Dataset(FlowDataset):
-    def __init__(self, aug_params=None, split='training', root=r'C:\Users\Machine Learning GPU\Desktop\sushlok\new_approach\datasets\carla',
+    def __init__(self, aug_params, split='training', root=r'C:\Users\Machine Learning GPU\Desktop\sushlok\new_approach\datasets\carla',
                  seq=[
                      "SoftRainNight",
                      "ClearNoon",
                      "CloudyNoon"
                  ],
                  setup_type=['camera_0', 'camera_-1', 'camera_1'], is_validate=False):
-        super(Carla_Dataset, self).__init__(aug_params, sparse=False)
+        super(Carla_Dataset, self ).__init__(aug_params)
         if split == 'testing':
             self.is_test = True
 
@@ -107,7 +109,7 @@ class Carla_Dataset(FlowDataset):
                 for im in images:
                     img0 = os.path.join(data_path, 'image_0', im)
                     img1 = os.path.join(data_path, 'image_1', im)
-                    flow = os.path.join(data_path, 'flow', im)
+                    flow = os.path.join(data_path, 'flow_data', im)
                     self.data.append(data_association(img0, img1, flow))
     
 
@@ -170,16 +172,15 @@ def fetch_dataloader(args, config=None, TRAIN_DS='C+T+K/S'):
 
     if args.stage == 'carla':
         if config is not None:
-            aug_params = {'crop_size': config.image_size,
-                          'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+            # aug_params = {'crop_size': config.image_size,
+            #               'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
             # , 'camera_1','camera_2','camera_3', 'camera_4'
-            train_dataset = Carla_Dataset(
-                aug_params, split='training', seq=args.seq_list, setup_type=args.setup_list)
+            train_dataset = Carla_Dataset(split='training', seq=args.seq_list, setup_type=args.setup_list)
         else:
-            aug_params = {'crop_size': args.image_size,
-                          'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+            # aug_params = {'crop_size': args.image_size,
+            #               'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
             # , "camera_-1", "camera_1", "camera_-10", "camera_10", "camera_-11", "camera_11", "camera_12", "camera_-2", "camera_2",
-            train_dataset = Carla_Dataset(aug_params, split='training', seq=[
+            train_dataset = Carla_Dataset(split='training', seq=[
                                           "ClearNoon"], setup_type=["camera_0","camera_-1","camera_1","camera_-10","camera_10","camera_-11","camera_11","camera_12","camera_-2","camera_2","camera_-3","camera_3","camera_-4","camera_4","camera_-5","camera_5","camera_-6","camera_6","camera_-7","camera_7","camera_-8","camera_8","camera_-9","camera_9"])
             # "camera_-3", "camera_3", "camera_-4", "camera_4", "camera_-5", "camera_5", "camera_-6", "camera_6", "camera_-7", "camera_7", "camera_-8", "camera_8", "camera_-9", "camera_9"])  # , 'camera_1','camera_2','camera_3', 'camera_4'
 
