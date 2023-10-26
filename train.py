@@ -82,14 +82,19 @@ from core.loss import compute_supervision_coarse, compute_coarse_loss, backwarp
 
 def sequence_loss(train_outputs, image1, image2, flow_gt, valid, gamma=0.8, use_matching_loss=False):
     """ Loss function defined over sequence of flow predictions """
+    # print(valid.shape)
+    # print(image1.shape)
     flow_preds, softCorrMap = train_outputs
+    # print(flow_preds[-1].max(), flow_preds[-1].min())
     max_flow = max(image1.shape[2], image1.shape[3])
+    # print(max_flow)
     # original RAFT loss
     n_predictions = len(flow_preds)
     flow_loss = 0.0
 
     # exclude invalid pixels and extremely large displacements
     mag = torch.sum(flow_gt**2, dim=1).sqrt()
+    # print(mag.max(), mag.min())
     valid = (valid >= 0.5) & (mag < max_flow)
 
     for i in range(n_predictions):
@@ -251,49 +256,63 @@ def train(model,args):
     print('training data sequences')
     print("training_sequences: ", args.training_seq)
     
-    aug_params = {'crop_size': args.training_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+    aug_params = {'crop': [256,256]}
     train_dataset = datasets.Carla_Dataset(aug_params, split='training', root=args.data_root, seq= args.training_seq, setup_type = args.training_setup)
     train_loader = DataLoader(train_dataset, batch_size=args.training_parameters['batch_size'], shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
     # load optimizer and scheduler
+    # exit()
     optimizer, scheduler = fetch_optimizer(args, model, args.training_parameters['lr'], len(train_loader), args.training_parameters['num_epochs'])
     scaler = GradScaler(enabled=args.mixed_precision)
     writer = TensorboardWriter(args, scheduler, model)
     # training loop
     for epoch in range(args.training_parameters['num_epochs']):
-        for i, data in enumerate(train_loader):
-            # data
-            optimizer.zero_grad()
-            image1, image2, flow, valid = [x.cuda() for x in data]  
-            # forward pass
-            # print(image1.shape)
-            flow_pred = model(image1, image2)
-            # loss
-            loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.training_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
-            if scheduler != None:
+        loss_epoch = 0
+        metric_epoch = {}
+        with tqdm(train_loader, unit="batch") as tepoch:
+            for i, data in enumerate(tepoch):
+                tepoch.set_description(f"Epoch {epoch}")
+                # data
                 optimizer.zero_grad()
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
-                scaler.step(optimizer)
-                scheduler.step()
-                scaler.update()
-                if i % args.display_step_freq == 0:
-                    print('Epoch: [{}/{}], Step: [{}/{}], lr: {:.8f}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(epoch+1, args.training_parameters['num_epochs'], i+1, len(train_loader),scheduler.get_last_lr()[0], loss.item(), metric['epe'],metric['1px'],metric['3px'],metric['5px']))
-            else:
-                optimizer.zero_grad()
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                scaler.step(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
-                scaler.update()
-                if i % args.display_step_freq == 0:
-                    print('Epoch: [{}/{}], Step: [{}/{}], lr: {:.8f}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(epoch+1, args.training_parameters['num_epochs'], i+1, len(train_loader),args.training_parameters['lr'], loss.item(), metric['epe'],metric['1px'],metric['3px'],metric['5px']))
-            # tensorboard       
-            writer.update(model, loss, metric, epoch*len(train_loader)+i, 'train')
-            
-            
-            if i% args.save_step_freq == 0:
-                torch.save(model.state_dict(), args.checkpoint_dir + args.name + '_epoch_' + str(epoch) + '_step_' + str(i) + '.pth')
+                image1, image2, flow, valid = [x.cuda() for x in data]  
+                # forward pass
+                # print(image1.shape)
+                flow_pred = model(image1, image2)
+                # loss
+                loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.training_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
+                # print(loss.item())
+                if scheduler != None:
+                    optimizer.zero_grad()
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
+                    scaler.step(optimizer)
+                    scheduler.step()
+                    scaler.update()
+                    # if i % args.display_step_freq == 0:
+                        # print('Epoch: [{}/{}], Step: [{}/{}], lr: {:.8f}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(epoch+1, args.training_parameters['num_epochs'], i+1, len(train_loader),scheduler.get_last_lr()[0], loss.item(), metric['epe'],metric['1px'],metric['3px'],metric['5px']))
+                else:
+                    optimizer.zero_grad()
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    scaler.step(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
+                    scaler.update()
+                    # if i % args.display_step_freq == 0:
+                loss_epoch = loss_epoch + loss.item()/(i + 1)
+                metric_epoch['epe'] = metric_epoch.get('epe',0) + metric['epe']/(i + 1)
+                metric_epoch['1px'] = metric_epoch.get('1px',0) + metric['1px']/(i + 1)
+                metric_epoch['3px'] = metric_epoch.get('3px',0) + metric['3px']/(i + 1)
+                metric_epoch['5px'] = metric_epoch.get('5px',0) + metric['5px']/(i + 1)
+                tepoch.set_postfix(loss = loss_epoch, epe = metric_epoch['epe'], eval_metric = [metric_epoch['1px'],metric_epoch['3px'],metric_epoch['5px']])
+                # tepoch.set_postfix(loss = loss_epoch, epe = metric['epe'], eval_metric = [metric['1px'],metric['3px'],metric['5px']])
+                # tensorboard       
+                writer.update(model, loss, metric, epoch*len(train_loader)+i, 'train')
+                
+        
+        print("Current Training status:", f"Epoch: {epoch}, Loss: {loss_epoch}, epe: {metric_epoch['epe']}, 1px: {metric_epoch['1px']}, 3px: {metric_epoch['3px']}, 5px: {metric_epoch['5px']}")
+        if epoch% args.save_step_freq == 0:
+            print('Saving model...')
+            torch.save(model.state_dict(), args.checkpoint_dir + args.name + '_epoch_' + str(epoch) + '.pth')
     writer.close() 
 
 def test(model,args):
@@ -307,7 +326,8 @@ def test(model,args):
             torch.cuda.empty_cache()
             setuplist = []
             setuplist.append(setup)
-            aug_params = {'crop_size': args.testing_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+            aug_params = {'crop': [256,256]}
+            # aug_params = {'crop_size': args.testing_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
             test_dataset = datasets.Carla_Dataset(aug_params,split='training', root=args.data_root_test, seq= seq_list, setup_type = setuplist)
             test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.testing_parameters['batch_size'], shuffle=False, num_workers=args.num_workers, pin_memory=True, drop_last=True)
             total_loss = 0
@@ -316,27 +336,32 @@ def test(model,args):
             total_metric['1px'] = 0
             total_metric['3px'] = 0
             total_metric['5px'] = 0
-            for i, data in enumerate(test_loader):
-                # print(i)
-                # data
-                image1, image2, flow, valid = [x.cuda() for x in data]  
-                # forward pass
-                flow_pred = model(image1, image2)
-                # print(flow_pred)
-                # loss
-                loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.testing_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
-                # add loss and metric to tensorboard
-                total_loss += loss.item()
-                total_metric['epe'] += metric['epe']
-                total_metric['1px'] += metric['1px']
-                total_metric['3px'] += metric['3px']
-                total_metric['5px'] += metric['5px']
-                if args.visualize:
-                    visualize_flow(flow_pred, image1, image2, flow, valid, args.visualization_path, setup, seq, i)
-            print('Setup: {}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(setup, total_loss/len(test_loader), total_metric['epe']/len(test_loader),total_metric['1px']/len(test_loader),total_metric['3px']/len(test_loader),total_metric['5px']/len(test_loader)))
+            
+            with tqdm(test_loader, unit="batch") as testepoch:
+                for i, data in enumerate(testepoch):
+                    testepoch.set_description(f"Testing {seq}-{setup}")
+                    # print(i)
+                    # data
+                    image1, image2, flow, valid = [x.cuda() for x in data]  
+                    # forward pass
+                    flow_pred = model(image1, image2)
+                    # print(flow_pred)
+                    # loss
+                    loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.testing_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
+                    # add loss and metric to tensorboard
+                    total_loss += loss.item()
+                    total_metric['epe'] += metric['epe']
+                    total_metric['1px'] += metric['1px']
+                    total_metric['3px'] += metric['3px']
+                    total_metric['5px'] += metric['5px']
+                    if args.visualize:
+                        visualize_flow(flow_pred, image1, image2, flow, valid, args.visualization_path, setup, seq, i)
+                    testepoch.set_postfix(loss = total_loss/(i+1), epe = total_metric['epe']/(i+1), eval_metric = [total_metric['1px']/(i+1),total_metric['3px']/(i+1),total_metric['5px']/(i+1)])
+            print('Setup: {}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(f"{seq}-{setup}", total_loss/len(test_loader), total_metric['epe']/len(test_loader),total_metric['1px']/len(test_loader),total_metric['3px']/len(test_loader),total_metric['5px']/len(test_loader)))
 
 def evaluate(model,args):
-    aug_params = {'crop_size': args.training_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+    # aug_params = {'crop_size': args.training_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+    aug_params = {'crop': [256,256]}
     train_dataset = datasets.Carla_Dataset(aug_params, split='training', root=args.data_root, seq= args.training_seq, setup_type = args.training_setup)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.training_parameters['batch_size'], shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
     print(len(train_dataset))
@@ -346,75 +371,92 @@ def evaluate(model,args):
     # training loop
     for epoch in range(args.training_parameters['num_epochs']):
         torch.cuda.empty_cache()
-        for i, data in enumerate(train_loader):
-            # data
-            optimizer.zero_grad()
-            image1, image2, flow, valid = [x.cuda() for x in data]  
-            # forward pass
-            flow_pred = model(image1, image2)
-            # loss
-            loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.training_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
-            if scheduler != None:
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
-                scaler.step(optimizer)
-                scheduler.step()
-                scaler.update()
-                if i % args.display_step_freq == 0:
-                    print('Epoch: [{}/{}], Step: [{}/{}], lr: {:.8f}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(epoch+1, args.training_parameters['num_epochs'], i+1, len(train_loader),scheduler.get_last_lr()[0], loss.item(), metric['epe'],metric['1px'],metric['3px'],metric['5px']))
-            
-            else:
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                scaler.step(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
-                scaler.update()
-                if i % args.display_step_freq == 0:
-                    print('Epoch: [{}/{}], Step: [{}/{}], lr: {:.8f}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(epoch+1, args.training_parameters['num_epochs'], i+1, len(train_loader),args.training_parameters['lr'], loss.item(), metric['epe'],metric['1px'],metric['3px'],metric['5px']))
-            writer.update(model, loss, metric, epoch*len(train_loader)+i, 'train')
-            
-            if i% args.save_step_freq == 0:
-                print('Saving model...')
-                torch.save(model.state_dict(), args.checkpoint_dir + args.name + '_epoch_' + str(epoch) + '_step_' + str(i) + '.pth')
-            
-            # evaluate model
-            if (i+1) % args.eval_step_freq == 0:
-                print('Evaluating model...')
-                model.eval()
-                for seq in args.test_seq:
-                    seq_list = []
-                    seq_list.append(seq)
-                    for setup in args.test_setup:
-                        setuplist = []
-                        setuplist.append(setup)
-                        aug_params = {'crop_size': args.testing_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
-                        test_dataset = datasets.Carla_Dataset(aug_params,split='training', root=args.data_root_test, seq= seq_list, setup_type = setuplist)
-                        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.testing_parameters['batch_size'], shuffle=False, num_workers=args.num_workers, pin_memory=True, drop_last=True)
-                        print(len(test_loader))
-                        total_loss = 0
-                        total_metric = {}
-                        total_metric['epe'] = 0
-                        total_metric['1px'] = 0
-                        total_metric['3px'] = 0
-                        total_metric['5px'] = 0
-                        for j, data in enumerate(test_loader):
+        epoch_loss = 0
+        epoch_metric = {}
+        with tqdm(train_loader, unit="batch") as trainepoch:
+            for i, data in enumerate(trainepoch):
+                #       for i, data in enumerate(train_loader):
+                # data
+                trainepoch.set_description(f"Epoch {epoch}")
+                optimizer.zero_grad()
+                image1, image2, flow, valid = [x.cuda() for x in data]  
+                # forward pass
+                flow_pred = model(image1, image2)
+                # loss
+                loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.training_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
+                if scheduler != None:
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
+                    scaler.step(optimizer)
+                    scheduler.step()
+                    scaler.update()
+                    # if i % args.display_step_freq == 0:
+                    #     print('Epoch: [{}/{}], Step: [{}/{}], lr: {:.8f}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(epoch+1, args.training_parameters['num_epochs'], i+1, len(train_loader),scheduler.get_last_lr()[0], loss.item(), metric['epe'],metric['1px'],metric['3px'],metric['5px']))
+                
+                else:
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    scaler.step(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), args.training_parameters['clip_grad_norm'])
+                    scaler.update()
+                    # if i % args.display_step_freq == 0:
+                    #     print('Epoch: [{}/{}], Step: [{}/{}], lr: {:.8f}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(epoch+1, args.training_parameters['num_epochs'], i+1, len(train_loader),args.training_parameters['lr'], loss.item(), metric['epe'],metric['1px'],metric['3px'],metric['5px']))
+                epoch_loss = epoch_loss + loss.item()/(i + 1)
+                epoch_metric['epe'] = epoch_metric.get('epe',0) + metric['epe']/(i + 1)
+                epoch_metric['1px'] = epoch_metric.get('1px',0) + metric['1px']/(i + 1)
+                epoch_metric['3px'] = epoch_metric.get('3px',0) + metric['3px']/(i + 1)
+                epoch_metric['5px'] = epoch_metric.get('5px',0) + metric['5px']/(i + 1)
+                trainepoch.set_postfix(loss = epoch_loss, epe = epoch_metric['epe'], eval_metric = [epoch_metric['1px'],epoch_metric['3px'],epoch_metric['5px']])
+                writer.update(model, loss, metric, epoch*len(train_loader)+i, 'train')
+                
+            # if i% args.save_step_freq == 0:
+        print('Saving model...')
+        torch.save(model.state_dict(), args.checkpoint_dir + args.name + '_epoch_' + str(epoch) + '.pth')
+        
+        # evaluate model
+        if epoch % args.eval_step_freq == 0:
+            print('Evaluating model...')
+            model.eval()
+            for seq in args.test_seq:
+                seq_list = []
+                seq_list.append(seq)
+                for setup in args.test_setup:
+                    setuplist = []
+                    setuplist.append(setup)
+                    aug_params = {'crop': [256,256]}
+                    # aug_params = {'crop_size': args.testing_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+                    test_dataset = datasets.Carla_Dataset(aug_params,split='training', root=args.data_root_test, seq= seq_list, setup_type = setuplist)
+                    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.testing_parameters['batch_size'], shuffle=False, num_workers=args.num_workers, pin_memory=True, drop_last=True)
+                    print(len(test_loader))
+                    total_loss = 0
+                    total_metric = {}
+                    total_metric['epe'] = 0
+                    total_metric['1px'] = 0
+                    total_metric['3px'] = 0
+                    total_metric['5px'] = 0
+                    with tqdm(test_loader, unit="batch") as testepoch:
+                        for j, data in enumerate(testepoch):
                             # data
+                            testepoch.set_description(f"Testing {seq}-{setup}")
                             image1, image2, flow, valid = [x.cuda() for x in data]  
                             # forward pass
-                            flow_pred = model(image1, image2)
-                            # loss
-                            loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.testing_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
+                            with torch.no_grad():
+                                flow_pred = model(image1, image2)
+                                # loss
+                                loss, metric = sequence_loss(flow_pred, image1, image2, flow, valid, gamma=args.testing_parameters['flow_weighting_factor_gamma'], use_matching_loss=args.use_mix_attn)
                             # add loss and metric to tensorboard
-                            total_loss += loss.item()/len(test_loader)
-                            total_metric['epe'] += metric['epe']/len(test_loader)
-                            total_metric['1px'] += metric['1px']/len(test_loader)
-                            total_metric['3px'] += metric['3px']/len(test_loader)
-                            total_metric['5px'] += metric['5px']/len(test_loader)
+                            total_loss += loss.item()/(j+1)
+                            total_metric['epe'] += metric['epe']/(j+1)
+                            total_metric['1px'] += metric['1px']/(j+1)
+                            total_metric['3px'] += metric['3px']/(j+1)
+                            total_metric['5px'] += metric['5px']/(j+1)
+                            
+                            testepoch.set_postfix(loss = total_loss, epe = total_metric['epe'], eval_metric = [total_metric['1px'],total_metric['3px'],total_metric['5px']])
                             if args.visualize:
                                 visualize_flow(flow_pred, image1, image2, flow, valid, args.visualization_path, setup, seq, j)
-                        writer.update(model, total_loss/len(test_loader), total_metric, epoch*len(train_loader)+i, 'test',setup=setup,seq=seq)
-                        print('Setup: {}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(setup, total_loss, total_metric['epe'],total_metric['1px'],total_metric['3px'],total_metric['5px']))
+                        writer.update(model, total_loss, total_metric, epoch*len(train_loader)+i, 'test',setup=setup,seq=seq)
+                        print('Setup: {}, Loss: {:.8f}, epe:{:.8f}, 1px: {:.8f}, 3px: {:.8f},5px: {:.8f}'.format(f"Testing {seq}-{setup}", total_loss, total_metric['epe'],total_metric['1px'],total_metric['3px'],total_metric['5px']))
                         torch.cuda.empty_cache()
             model.train()
     writer.close()

@@ -24,18 +24,19 @@ import logging
 import random
 from pprint import pprint
 
+
 def save_data(camera_sensor_queue, flow_sensor_queue, data_dir, log_path):
     print("saving data")
     log_path_dir = os.path.dirname(log_path)
-    
+
     # create the absolute path for the image
     cam_data = list(camera_sensor_queue.queue)
     flow_data_list = list(flow_sensor_queue.queue)
-    for i in range(1,len(list(camera_sensor_queue.queue))):
-        frame_name, image_data= cam_data[i]
+    for i in range(1, len(list(camera_sensor_queue.queue))):
+        frame_name, image_data = cam_data[i]
         frame_name, flow_data = flow_data_list[i]
         flow = np.frombuffer(flow_data.raw_data, dtype=np.float32)
-        
+
         # if flow mag is very small then skip
         # if np.mean(np.abs(flow)) < 0.5:
         #     continue
@@ -52,21 +53,36 @@ def save_data(camera_sensor_queue, flow_sensor_queue, data_dir, log_path):
         if not os.path.exists(img_abs_path_dir_old):
             print("creating dir: ", img_abs_path_dir_old)
             os.makedirs(img_abs_path_dir_old)
-            
+
         if not os.path.exists(img_abs_path_dir_current):
             print("creating dir: ", img_abs_path_dir_current)
             os.makedirs(img_abs_path_dir_current)
-        
-        
+
         # flow rel filepath
-        flow_rel_filepath = data_dir + "/flow_npz/{}.npz".format(image_data.frame)
+        flow_rel_filepath = data_dir + "/flow_data/{}.png".format(image_data.frame)
         # create dirs if not exist
         flow_abs_filepath = os.path.join(log_path_dir, flow_rel_filepath)
         flow_abs_path_dir = os.path.dirname(flow_abs_filepath)
         if not os.path.exists(flow_abs_path_dir):
             print("creating dir: ", flow_abs_path_dir)
             os.makedirs(flow_abs_path_dir)
-            
+
+        # save flow in kitti format
+        # flow_rel_filepath = path + "/flow/{}.png".format(image_data.frame)
+        # flow_abs_filepath = os.path.join(log_path_dir, flow_rel_filepath)
+        # flow_abs_path_dir = os.path.dirname(flow_abs_filepath)
+        # if not os.path.exists(flow_abs_path_dir):
+        #     print("creating dir: ", flow_abs_path_dir)
+        #     os.makedirs(flow_abs_path_dir)
+        flow = flow.reshape((image_data.height, image_data.width, 2))
+        flow_kitti = np.zeros((image_data.height, image_data.width, 3))
+        flow_kitti[:, :, 0] = (flow[:, :, 0] + 2)*(1/4)
+        flow_kitti[:, :, 1] = (flow[:, :, 1] + 2)*(1/4)
+        # map flow to 16 bit image
+        flow_kitti = (flow_kitti*65535).astype(np.uint16)
+
+        flow_kitti[:, :, 2] = np.ones((image_data.height, image_data.width)).astype(np.uint16)
+
         # flow vis
         flow_vis_rel_filepath = data_dir + "/flow_vis/{}.png".format(image_data.frame)
         flow_vis_abs_filepath = os.path.join(log_path_dir, flow_vis_rel_filepath)
@@ -75,29 +91,27 @@ def save_data(camera_sensor_queue, flow_sensor_queue, data_dir, log_path):
             print("creating dir: ", flow_vis_abs_path_dir)
             os.makedirs(flow_vis_abs_path_dir)
 
-        
-
         current_data = image_data.raw_data
         old_data = cam_data[i-1][1].raw_data
         current_buffer = np.frombuffer(current_data, dtype=np.uint8)
         old_buffer = np.frombuffer(old_data, dtype=np.uint8)
-        
+
         current_buffer = current_buffer.reshape(image_data.height, image_data.width, 4)
         old_buffer = old_buffer.reshape(image_data.height, image_data.width, 4)
-        
+
         current_img = cv.cvtColor(current_buffer, cv.COLOR_BGRA2BGR)
         old_img = cv.cvtColor(old_buffer, cv.COLOR_BGRA2BGR)
-        
+
         print("saving image0: ", img_abs_filepath_old)
         print("saving image1: ", img_abs_filepath_current)
         print("saving flow: ", flow_abs_filepath)
         print("saving flow_vis: ", flow_vis_abs_filepath)
-        
+
         cv.imwrite(img_abs_filepath_old, old_img)
         cv.imwrite(img_abs_filepath_current, current_img)
-        
-        np.savez(flow_abs_filepath, flow=flow)
-        
+        cv.imwrite(flow_abs_filepath, flow_kitti)
+        # np.savez(flow_abs_filepath, flow=flow)
+
         # flow vis
         flow_vis = flow_data.get_color_coded_flow()
         data = flow_vis.raw_data
@@ -106,8 +120,6 @@ def save_data(camera_sensor_queue, flow_sensor_queue, data_dir, log_path):
         buffer = buffer.reshape((flow_vis.height, flow_vis.width, 4))
         flow_vis_img = cv.cvtColor(buffer, cv.COLOR_BGRA2BGR)
         cv.imwrite(flow_vis_abs_filepath, flow_vis_img)
-        
-    
 
 
 def sensor_callback(sensor_data, camera_queue, flow_queue, sensor_name, log_path):
@@ -117,8 +129,9 @@ def sensor_callback(sensor_data, camera_queue, flow_queue, sensor_name, log_path
         sensor_queue = flow_queue
     sensor_queue.put((sensor_data.frame, sensor_data))
 
+
 def main(world, weather_param, data_dir, sensor, log_path, env_state):
-    
+
     # client = carla.Client('127.0.0.1', 2000)
     # client.set_timeout(10.0)
 
@@ -182,7 +195,7 @@ def main(world, weather_param, data_dir, sensor, log_path, env_state):
             os.makedirs(data_dir)
         sensor_list = []
         num_images = env_state['num_camera_images']
-        
+
         blueprint_library = world.get_blueprint_library()
 
         rgb_camera_bp = blueprint_library.find('sensor.camera.rgb')
@@ -203,20 +216,34 @@ def main(world, weather_param, data_dir, sensor, log_path, env_state):
         # if not os.path.exists(weather + "/flow_camera_{}".format(i)):
         #     os.makedirs(weather + "/flow_camera_{}".format(i))
 
-        camera_transform = carla.Transform(carla.Location(x=sensor['pos_x'], y = sensor['pos_y'],z=sensor['pos_z']), carla.Rotation(roll=sensor['roll'], pitch=sensor['pitch'], yaw=sensor['yaw']))
+        camera_transform = carla.Transform(
+            carla.Location(x=sensor['pos_x'],
+                           y=sensor['pos_y'],
+                           z=sensor['pos_z']),
+            carla.Rotation(roll=sensor['roll'],
+                           pitch=sensor['pitch'],
+                           yaw=sensor['yaw']))
         camera = world.spawn_actor(rgb_camera_bp, camera_transform, attach_to=ego_vehicle)
         sensors.append(camera)
         print('created %s' % camera.type_id)
 
-        flow_camera_transform = carla.Transform(carla.Location(x=sensor['pos_x'], y = sensor['pos_y'],z=sensor['pos_z']), carla.Rotation(roll=sensor['roll'], pitch=sensor['pitch'], yaw=sensor['yaw']))
+        flow_camera_transform = carla.Transform(
+            carla.Location(x=sensor['pos_x'],
+                           y=sensor['pos_y'],
+                           z=sensor['pos_z']),
+            carla.Rotation(roll=sensor['roll'],
+                           pitch=sensor['pitch'],
+                           yaw=sensor['yaw']))
         flow_camera = world.spawn_actor(flow_camera_bp, flow_camera_transform, attach_to=ego_vehicle)
         sensors.append(flow_camera)
         print('created %s' % flow_camera.type_id)
 
-        camera.listen(lambda data: sensor_callback(data, camera_sensor_queue, flow_sensor_queue, "rgb_camera_{}".format(sensor['name']), log_path))
+        camera.listen(lambda data: sensor_callback(data, camera_sensor_queue,
+                      flow_sensor_queue, "rgb_camera_{}".format(sensor['name']), log_path))
         sensor_list.append(camera)
 
-        flow_camera.listen(lambda data: sensor_callback(data, camera_sensor_queue, flow_sensor_queue,"flow_camera_{}".format(sensor['name']), log_path))
+        flow_camera.listen(lambda data: sensor_callback(data, camera_sensor_queue,
+                           flow_sensor_queue, "flow_camera_{}".format(sensor['name']), log_path))
         sensor_list.append(flow_camera)
 
         print(sensor_list)
@@ -243,10 +270,10 @@ def main(world, weather_param, data_dir, sensor, log_path, env_state):
 
             # except Empty:
             #     print("    Some of the sensor information is missed")
-        
+
         # print(list(camera_sensor_queue.queue))
         # print(list(flow_sensor_queue.queue))
-        
+
         save_data(camera_sensor_queue, flow_sensor_queue, data_dir + "/" + sensor['name'], log_path)
 
     finally:
@@ -266,38 +293,38 @@ def main(world, weather_param, data_dir, sensor, log_path, env_state):
 if __name__ == "__main__":
 
     weather_parameters_dict = {'SoftRainNight': carla.WeatherParameters.SoftRainNight,
-                                'ClearNoon': carla.WeatherParameters.ClearNoon,
-                                'CloudyNoon': carla.WeatherParameters.CloudyNoon,
-                                'HardRainNight': carla.WeatherParameters.HardRainNight,
-                                'WetNoon': carla.WeatherParameters.WetNoon,
-                                'WetCloudyNoon': carla.WeatherParameters.WetCloudyNoon,
-                                'MidRainyNoon': carla.WeatherParameters.MidRainyNoon,
-                                'HardRainNoon': carla.WeatherParameters.HardRainNoon,
-                                'SoftRainNoon': carla.WeatherParameters.SoftRainNoon,
-                                'ClearSunset': carla.WeatherParameters.ClearSunset,
-                                'CloudySunset': carla.WeatherParameters.CloudySunset,
-                                'WetSunset': carla.WeatherParameters.WetSunset,
-                                'WetCloudySunset': carla.WeatherParameters.WetCloudySunset,
-                                'MidRainSunset': carla.WeatherParameters.MidRainSunset,
-                                'HardRainSunset': carla.WeatherParameters.HardRainSunset,
-                                'SoftRainSunset': carla.WeatherParameters.SoftRainSunset,
-                                'ClearNight': carla.WeatherParameters.ClearNight,
-                                'CloudyNight': carla.WeatherParameters.CloudyNight,
-                                'WetNight': carla.WeatherParameters.WetNight,
-                                'WetCloudyNight': carla.WeatherParameters.WetCloudyNight}
-    
+                               'ClearNoon': carla.WeatherParameters.ClearNoon,
+                               'CloudyNoon': carla.WeatherParameters.CloudyNoon,
+                               'HardRainNight': carla.WeatherParameters.HardRainNight,
+                               'WetNoon': carla.WeatherParameters.WetNoon,
+                               'WetCloudyNoon': carla.WeatherParameters.WetCloudyNoon,
+                               'MidRainyNoon': carla.WeatherParameters.MidRainyNoon,
+                               'HardRainNoon': carla.WeatherParameters.HardRainNoon,
+                               'SoftRainNoon': carla.WeatherParameters.SoftRainNoon,
+                               'ClearSunset': carla.WeatherParameters.ClearSunset,
+                               'CloudySunset': carla.WeatherParameters.CloudySunset,
+                               'WetSunset': carla.WeatherParameters.WetSunset,
+                               'WetCloudySunset': carla.WeatherParameters.WetCloudySunset,
+                               'MidRainSunset': carla.WeatherParameters.MidRainSunset,
+                               'HardRainSunset': carla.WeatherParameters.HardRainSunset,
+                               'SoftRainSunset': carla.WeatherParameters.SoftRainSunset,
+                               'ClearNight': carla.WeatherParameters.ClearNight,
+                               'CloudyNight': carla.WeatherParameters.CloudyNight,
+                               'WetNight': carla.WeatherParameters.WetNight,
+                               'WetCloudyNight': carla.WeatherParameters.WetCloudyNight}
+
     parser = argparse.ArgumentParser(description='CARLA Sensor Data Recorder')
-    parser.add_argument('--log_path', type=str, default='/home/sushlok/new_approach/datasets/data_generation/recording03.log', help='Path to the log file')
-    parser.add_argument('--data_dir', type=str, default='/home/sushlok/new_approach/datasets/data_generation/datasets2', help='Path to the dataset directory')
-    parser.add_argument('--env_state', type=str, default = '/home/sushlok/new_approach/datasets/data_generation/env_config.yaml', help='config file for the environment and recorder car')
+    parser.add_argument('--log_path', type=str, help='Path to the log file')
+    parser.add_argument('--data_dir', type=str, help='Path to the dataset directory')
+    parser.add_argument('--env_state', type=str, help='config file for the environment and recorder car')
     args = parser.parse_args()
     log_path = args.log_path
-    
+
     # convert env_state.yaml to dict
     env_state = {}
     with open(args.env_state, 'r') as f:
         env_state = yaml.load(f, Loader=yaml.FullLoader)
-        
+
     weather_list = env_state['weather_list']
     print("weather_list:\n", yaml.dump(weather_list, default_flow_style=False, sort_keys=False))
 
