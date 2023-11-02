@@ -97,7 +97,7 @@ class Carla_Dataset(FlowDataset):
                      "CloudyNoon"
                  ],
                  setup_type=['camera_0', 'camera_-1', 'camera_1'], is_validate=False):
-        super(Carla_Dataset, self).__init__(aug_params)
+        super(Carla_Dataset, self ).__init__(aug_params)
         if split == 'testing':
             self.is_test = True
 
@@ -107,19 +107,12 @@ class Carla_Dataset(FlowDataset):
             for t in setup_type:
                 data_path = os.path.join(root, s, t)
                 images = os.listdir(os.path.join(data_path, 'image_0'))
-                print('ATTENTION: changes might be required in the data loader for the new dataset')
                 for im in images:
                     img0 = os.path.join(data_path, 'image_0', im)
                     img1 = os.path.join(data_path, 'image_1', im)
                     flow = os.path.join(data_path, 'flow_data', im)
                     self.data.append(data_association(img0, img1, flow))
 
-        # for debugging purposes
-        with open('data_list.txt', 'w') as f:
-            for i, image_pair_flow in enumerate(zip(self.image_list, self.flow_list)):
-                image_pair = image_pair_flow[0]
-                flow = image_pair_flow[1]
-                f.write('{} {} {}\n'.format(i, image_pair, flow))
 
 
 def fetch_dataloader(args, config=None, TRAIN_DS='C+T+K/S'):
