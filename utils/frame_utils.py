@@ -104,7 +104,7 @@ def readFlowKITTI(filename):
     flow = flow[:,:,::-1].astype(np.float32)
     flow, valid = flow[:, :, :2], flow[:, :, 2]
     flow = 2 - (4*flow/65535)
-    flow = flow/4
+    flow = flow/8
     # print(flow.max(), flow.min())
     return flow, valid
 

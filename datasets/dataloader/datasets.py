@@ -9,7 +9,7 @@ import math
 import random
 from glob import glob
 import os.path as osp
-
+import cv2
 from utils import frame_utils
 from utils.augmentor import FlowAugmentor, SparseFlowAugmentor
 import albumentations as A 
@@ -20,7 +20,8 @@ class FlowDataset(data.Dataset):
     def __init__(self, aug_params):
         # self.augmentor = None
         # self.sparse = sparse
-        self.augmentor = A.Compose([A.RandomCrop(width=aug_params['crop'][0], height=aug_params['crop'][1], p=1.0),
+        self.augmentor = A.Compose([A.Resize(1080//4,1920//4,cv2.INTER_AREA, p=1.0),
+                                    A.RandomCrop(width=aug_params['crop'][0], height=aug_params['crop'][1], p=1.0),
                                     A.HorizontalFlip(p=0.5),
                                     A.RandomRotate90(p=0.5),
                                     ])
@@ -41,8 +42,8 @@ class FlowDataset(data.Dataset):
         img2 = cv.imread(img1_path)
         flow, valid = frame_utils.readFlowKITTI(flow_path)
         flow = flow.astype(np.float32)
-        flow[:,:,0] = flow[:,:,0] * 256
-        flow[:,:,1] = flow[:,:,1] * 256
+        flow[:,:,0] = flow[:,:,0] * (1920//4)
+        flow[:,:,1] = flow[:,:,1] * (1080//4)
         # flow = flow[:,:,:2]
         # valid = flow[:, :, 2] > 1
 

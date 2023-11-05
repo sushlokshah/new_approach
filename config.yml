@@ -94,15 +94,15 @@ testing_parameters:
   clip_grad_norm: 1.0
 
 # augmentations list
-# training_augmentations:
+training_augmentations:
 #   RandomCrop:
-#     size: [128, 128]
+    size: [128, 128]
 
   
 
-# testing_augmentations:
+testing_augmentations:
 #   RandomCrop:
-#     size: [128, 128]
+    size: [128, 128]
 
 num_workers: 4
 

@@ -256,7 +256,7 @@ def train(model,args):
     print('training data sequences')
     print("training_sequences: ", args.training_seq)
     
-    aug_params = {'crop': [256,256]}
+    aug_params = {'crop': args.training_augmentations['size']}
     train_dataset = datasets.Carla_Dataset(aug_params, split='training', root=args.data_root, seq= args.training_seq, setup_type = args.training_setup)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.training_parameters['batch_size'], shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
     # print(len(train_dataset))
@@ -327,7 +327,7 @@ def test(model,args):
             torch.cuda.empty_cache()
             setuplist = []
             setuplist.append(setup)
-            aug_params = {'crop': [256,256]}
+            aug_params = {'crop': args.testing_augmentations['size']}
             # aug_params = {'crop_size': args.testing_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
             test_dataset = datasets.Carla_Dataset(aug_params,split='training', root=args.data_root_test, seq= seq_list, setup_type = setuplist)
             test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.testing_parameters['batch_size'], shuffle=False, num_workers=args.num_workers, pin_memory=True, drop_last=True)
@@ -362,10 +362,10 @@ def test(model,args):
 
 def evaluate(model,args):
     # aug_params = {'crop_size': args.training_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
-    aug_params = {'crop': [256,256]}
+    aug_params = {'crop': args.training_augmentations['size']}
     train_dataset = datasets.Carla_Dataset(aug_params, split='training', root=args.data_root, seq= args.training_seq, setup_type = args.training_setup)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.training_parameters['batch_size'], shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
-    print(len(train_dataset))
+    # print(len(train_dataset))
     optimizer, scheduler = fetch_optimizer(args, model, args.training_parameters['lr'], len(train_loader), args.training_parameters['num_epochs'])
     scaler = GradScaler(enabled=args.mixed_precision)
     writer = TensorboardWriter(args, scheduler, model)
@@ -425,11 +425,11 @@ def evaluate(model,args):
                 for setup in args.test_setup:
                     setuplist = []
                     setuplist.append(setup)
-                    aug_params = {'crop': [256,256]}
+                    aug_params = {'crop': args.testing_augmentations['size']}
                     # aug_params = {'crop_size': args.testing_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
                     test_dataset = datasets.Carla_Dataset(aug_params,split='training', root=args.data_root_test, seq= seq_list, setup_type = setuplist)
                     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=args.testing_parameters['batch_size'], shuffle=False, num_workers=args.num_workers, pin_memory=True, drop_last=True)
-                    print(len(test_loader))
+                    # print(len(test_loader))
                     total_loss = 0
                     total_metric = {}
                     total_metric['epe'] = 0
@@ -540,7 +540,7 @@ def train_sweep(config, args = None):
     }
     """
     # print(type(config['batch_size']))
-    aug_params = {'crop_size': args.training_augmentations['RandomCrop']['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
+    aug_params = {'crop_size': args.training_augmentations['size'], 'min_scale': -0.2, 'max_scale': 0.4, 'do_flip': False}
     train_dataset = datasets.Carla_Dataset(aug_params, split='training', root=args.data_root, seq= args.training_seq, setup_type = args.training_setup)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, num_workers=args.num_workers, pin_memory=True, drop_last=True)
     # print(len(train_dataset))
@@ -744,7 +744,8 @@ if __name__ == '__main__':
             config[key] = value 
     
     # update args
-    args = argparse.Namespace(**config)  
+    args = argparse.Namespace(**config)
+    # print(args)
     # print(args.training_augmentations)
     
     # write args to yml file
