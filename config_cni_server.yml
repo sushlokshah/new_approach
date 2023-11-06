@@ -4,7 +4,7 @@ name: front_rear
 
 #update and display frequency
 display_step_freq: 10
-save_step_freq: 100
+save_step_freq: 10
 eval_step_freq: 1
 
 #about training and testing
